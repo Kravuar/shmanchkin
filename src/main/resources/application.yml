@@ -1,0 +1,6 @@
+web:
+  allowed-origins:
+    - http://localhost:3000
+spring:
+  main:
+    allow-bean-definition-overriding: true
