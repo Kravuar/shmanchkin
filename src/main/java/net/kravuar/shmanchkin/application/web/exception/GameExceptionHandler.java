@@ -1,5 +1,6 @@
 package net.kravuar.shmanchkin.application.web.exception;
 
+import net.kravuar.shmanchkin.domain.model.exceptions.GameException;
 import net.kravuar.shmanchkin.domain.model.exceptions.GameIsFullException;
 import net.kravuar.shmanchkin.domain.model.exceptions.GameNotFoundException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -8,17 +9,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 @ControllerAdvice
 public class GameExceptionHandler {
+//    Handling of irrecoverable exceptions happens here.
 //    TODO: BETTER EXCEPTION RESPONSES
 
-    @ExceptionHandler(GameNotFoundException.class)
+    @ExceptionHandler(GameException.class)
     @ResponseBody
-    public String onGameNotFound(GameNotFoundException exception) {
-        return "lobby not found: " + exception.getLobbyName();
-    }
-
-    @ExceptionHandler(GameIsFullException.class)
-    @ResponseBody
-    public String onGameNotFound(GameIsFullException exception) {
-        return "lobby is full: " + exception.getLobbyName();
+    public String onGameNotFound(GameException exception) {
+        return exception.getMessage();
     }
 }

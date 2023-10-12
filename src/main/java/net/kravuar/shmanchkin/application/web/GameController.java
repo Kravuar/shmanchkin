@@ -1,16 +1,15 @@
 package net.kravuar.shmanchkin.application.web;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import net.kravuar.shmanchkin.application.services.GameService;
 import net.kravuar.shmanchkin.domain.model.dto.GameDTO;
 import net.kravuar.shmanchkin.domain.model.dto.GameFormDTO;
 import net.kravuar.shmanchkin.domain.model.events.GameEvent;
-import net.kravuar.shmanchkin.domain.model.events.PlayerEvent;
-import net.kravuar.shmanchkin.domain.model.events.TestEvent;
+import net.kravuar.shmanchkin.domain.model.game.UserInfo;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -18,14 +17,8 @@ import java.util.List;
 @RequestMapping("/games")
 @RequiredArgsConstructor
 public class GameController {
-    // TODO: Spring security + jwt for all players
-
+//    TODO: Add validation to request params and stuff
     private final GameService gameService;
-
-    @GetMapping("/join/{lobbyName}/{username}")
-    public Flux<ServerSentEvent<GameEvent>> joinLobby(@PathVariable String lobbyName, @PathVariable String username) {
-        return gameService.subscribe(lobbyName, username);
-    }
 
 //    TODO: pageable
     @GetMapping("/gameList")
@@ -36,18 +29,29 @@ public class GameController {
     }
 
     @PostMapping("/create")
-    public void createGame(@RequestBody GameFormDTO gameForm) {
-        gameService.createGame(gameForm);
+    public Flux<ServerSentEvent<GameEvent>> createLobby(@RequestBody GameFormDTO gameForm) {
+        return gameService.createGame(gameForm);
     }
 
-//    TODO: Authorize the owner
-    @DeleteMapping("/close/{lobbyName}")
-    public Mono<Boolean> createGame(@PathVariable String lobbyName) {
-        return Mono.just(gameService.close(lobbyName));
+    @GetMapping("/join/{lobbyName}/{username}")
+    public Flux<ServerSentEvent<GameEvent>> joinLobby(@PathVariable String lobbyName, @PathVariable String username) {
+        return gameService.joinGame(lobbyName, username);
     }
 
-    @PostMapping("/test/{lobbyName}/{username}")
-    public void test(@RequestBody String message, @PathVariable String lobbyName, @PathVariable String username) {
-        gameService.gameEventListener(new TestEvent(lobbyName, username, "test-event", message));
+    @DeleteMapping("/close")
+    public Boolean closeLobby() {
+        return gameService.closeGame();
+    }
+
+//    Leaving is done via sse cancellation
+
+    @GetMapping("/test/{username}")
+    public UserInfo test(@PathVariable String username) {
+        var currentUser = gameService.getCurrentUser();
+        if (currentUser.getUsername() != null)
+            currentUser.setUsername(currentUser.getUsername() + 'a');
+        else
+            currentUser.setUsername(username);
+        return new UserInfo(currentUser.getUsername());
     }
 }

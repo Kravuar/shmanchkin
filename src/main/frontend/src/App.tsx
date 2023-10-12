@@ -11,7 +11,8 @@ function App() {
 
   function join(gameLobby: GameLobby, username: string) {
     const source = new EventSource(`http://localhost:8080/games/join/${gameLobby.lobbyName}/${username}`);
-    source.onerror = (e) => console.log(`App.join: Couldn't subscribe: ${e}`);
+    // Отключение вручную нужно делать с фронта: source.close()
+    source.onerror = (e) => console.log(`sse error: ${JSON.stringify(e, ["message", "arguments", "type", "name"])}`);
     setGameEventSource(source);
     setUsername(username);
     setGameLobby(gameLobby);

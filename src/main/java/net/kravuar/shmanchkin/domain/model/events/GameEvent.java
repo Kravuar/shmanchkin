@@ -11,3 +11,4 @@ public abstract class GameEvent {
     private final String lobbyName;
     private final String eventType;
 }
+

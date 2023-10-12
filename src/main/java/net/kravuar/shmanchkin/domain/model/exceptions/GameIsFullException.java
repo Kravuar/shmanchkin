@@ -1,13 +1,12 @@
 package net.kravuar.shmanchkin.domain.model.exceptions;
 
 import lombok.Getter;
+import net.kravuar.shmanchkin.domain.model.game.Game;
 
 @Getter
-public class GameIsFullException extends RuntimeException {
-    private final String lobbyName;
+public class GameIsFullException extends GameException {
 
     public GameIsFullException(String lobbyName) {
-        super("Game with name " + lobbyName + " is full.");
-        this.lobbyName = lobbyName;
+        super(lobbyName, "Game with name " + lobbyName + " is full.");
     }
 }

@@ -4,13 +4,13 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.kravuar.shmanchkin.domain.model.events.GameEvent;
 import net.kravuar.shmanchkin.domain.model.exceptions.GameIsFullException;
+import net.kravuar.shmanchkin.domain.model.exceptions.UsernameTakenException;
 import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @RequiredArgsConstructor
 public class Game {
@@ -21,24 +21,28 @@ public class Game {
     private final String ownerName;
     @Getter
     private final int maxPlayers;
-    @Getter
-    private final List<Player> playersJoined = new ArrayList<>();
+    private final Map<String, Player> playersJoined = new HashMap<>();
+
+    public Collection<Player> getPlayers() {
+        return Collections.unmodifiableCollection(playersJoined.values());
+    }
 
     public boolean isFull() {
         return playersJoined.size() == maxPlayers;
     }
 
-
-    public synchronized void subscribe(MessageHandler handler, String username) {
+    public void subscribe(MessageHandler handler, UserInfo userInfo) {
         if (isFull())
             throw new GameIsFullException(lobbyName);
+        var username = userInfo.getUsername();
+        if (playersJoined.putIfAbsent(username, new Player(username)) != null)
+            throw new UsernameTakenException(lobbyName, username);
         channel.subscribe(handler);
-        playersJoined.add(new Player(username));
     }
 
-    public void unsubscribe(MessageHandler handler, String username) {
+    public void unsubscribe(MessageHandler handler, UserInfo userInfo) {
         channel.unsubscribe(handler);
-        playersJoined.removeIf(player -> player.getUsername().equals(username));
+        playersJoined.remove(userInfo.getUsername());
     }
 
     public void publishEvent(GenericMessage<GameEvent> eventMessage) {
