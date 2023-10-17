@@ -36,7 +36,8 @@ public class GameService {
         return Collections.unmodifiableCollection(games.values());
     }
 
-    public Flux<ServerSentEvent<GameEvent>> createGame(GameFormDTO gameForm) {
+    public void createGame(GameFormDTO gameForm) {
+        System.out.println("Service " + gameForm.getLobbyName() + ' ' + gameForm.getOwnerName() + ' ' + gameForm.getMaxPlayers());
         if (!currentUser.isIdle())
             throw new AlreadyInGameException(currentUser.getGame().getLobbyName());
         var game = games.putIfAbsent(
@@ -49,11 +50,10 @@ public class GameService {
         );
         if (game != null)
             throw new GameAlreadyExistsException(game.getLobbyName());
-
-        return joinGame(gameForm.getLobbyName(), gameForm.getOwnerName()); // I believe it won't throw anything as long as it's synchronized
     }
 
     public synchronized Flux<ServerSentEvent<GameEvent>> joinGame(String lobbyName, String username) {
+        System.out.println("Join " + lobbyName + ' ' + username);
         if (!currentUser.isIdle())
             throw new AlreadyInGameException(currentUser.getGame().getLobbyName());
 

@@ -19,14 +19,16 @@ export default function HostForm({onSubmit}: HostFormProps) {
             lobbyName: lobbyName,
             ownerName: username,
             maxPlayers: maxPlayers
-        }).then(() => console.log("Hostform.handleSubmit: GOOD")).catch((error) => console.log(`Hostform.handleSubmit: Bad: ${error}`));
-
-        onSubmit({
-            lobbyName: lobbyName,
-            ownerName: username,
-            maxPlayers: maxPlayers,
-            playersJoined: [],
-        }, username);
+        }).then(() => {
+            console.log("Hostform.handleSubmit: GOOD");
+            onSubmit({
+                lobbyName: lobbyName,
+                ownerName: username,
+                maxPlayers: maxPlayers,
+                playersJoined: [],
+            }, username);
+        }
+        ).catch((error) => console.log(`Hostform.handleSubmit: Bad: ${error}`));
     };
 
     return (

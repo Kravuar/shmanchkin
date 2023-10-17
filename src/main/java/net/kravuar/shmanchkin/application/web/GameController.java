@@ -1,6 +1,5 @@
 package net.kravuar.shmanchkin.application.web;
 
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import net.kravuar.shmanchkin.application.services.GameService;
 import net.kravuar.shmanchkin.domain.model.dto.GameDTO;
@@ -29,8 +28,9 @@ public class GameController {
     }
 
     @PostMapping("/create")
-    public Flux<ServerSentEvent<GameEvent>> createLobby(@RequestBody GameFormDTO gameForm) {
-        return gameService.createGame(gameForm);
+    public void createLobby(@RequestBody GameFormDTO gameForm) {
+        System.out.println("jopa");
+        gameService.createGame(gameForm);
     }
 
     @GetMapping("/join/{lobbyName}/{username}")
