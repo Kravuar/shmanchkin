@@ -1,16 +1,15 @@
 export interface LobbyUpdate {
-    username: string,
+    userInfo: UserInfo,
     action: 'joined' | 'left'
+}
+
+export interface UserInfo {
+    username: string
 }
 
 export interface GameLobby {
     lobbyName: string,
-    ownerName: string,
+    owner: UserInfo,
     maxPlayers: number,
-    playersJoined: string[],
-}
-
-export interface TestMessage {
-    username: string,
-    message: string
+    playersJoined: UserInfo[],
 }

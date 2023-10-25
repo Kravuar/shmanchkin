@@ -33,16 +33,15 @@ public class GameController {
         return gameService.getGameList();
     }
 
-    @Operation(summary = "Создание лобби.", description = "Создание лобби, с открытием SSE потока для игровых ивентов.")
+    @Operation(summary = "Создание лобби.", description = "Создание лобби.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Игра создана."),
             @ApiResponse(responseCode = "400", description = "Невозможно создать игру. Уже в игре."),
             @ApiResponse(responseCode = "400", description = "Невозможно создать игру. Имя лобби уже занято."),
     })
     @PostMapping("/create")
-    public Flux<ServerSentEvent<GameEventDTO>> createLobby(@RequestBody GameFormDTO gameForm) {
+    public void createLobby(@RequestBody GameFormDTO gameForm) {
         gameService.createGame(gameForm);
-        return gameService.joinGame(gameForm.getLobbyName(), gameForm.getOwnerName());
     }
 
 //    TODO: Переподключение

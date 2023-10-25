@@ -67,8 +67,15 @@ export default function JoinForm({onSubmit}: JoinFormProps) {
                     {games.map(game =>
                         <li key={game.lobbyName}>
                             <p>Название: {game.lobbyName}</p>
-                            <p>Создатель: {game.ownerName}</p>
+                            <p>Создатель: {game.owner.username}</p>
                             <p>Игроков: {game.playersJoined.length} / {game.maxPlayers}</p>
+                            <ul>
+                                {game.playersJoined.map(player =>
+                                    <li key={player.username}>
+                                        <p>{player.username}</p>
+                                    </li>
+                                )}
+                            </ul>
                         </li>
                     )}
                 </ul>

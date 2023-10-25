@@ -1,5 +1,6 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {GameLobby} from "./Types";
+import {json} from "stream/consumers";
 import {axiosConfigured} from "./Utils";
 
 type HostFormProps = {
@@ -22,9 +23,9 @@ export default function HostForm({onSubmit}: HostFormProps) {
             console.log("Hostform.handleSubmit: GOOD");
             onSubmit({
                 lobbyName: lobbyName,
-                ownerName: username,
+                owner: {username: username},
                 maxPlayers: maxPlayers,
-                playersJoined: [],
+                playersJoined: [{username: username}],
             }, username);
         }
         ).catch((error) => console.log(`Hostform.handleSubmit: Bad: ${error}`));

@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {GameLobby, LobbyUpdate, TestMessage} from "./Types";
+import {GameLobby, LobbyUpdate, UserInfo} from "./Types";
 import {axiosConfigured} from "./Utils";
 
 type GameProps = {
@@ -11,8 +11,7 @@ type GameProps = {
 
 export default function Game({gameEventSource, username, onGameExit, gameLobby}: GameProps) {
     const [gameState, setGameState] = useState<'joining' | 'waiting' | 'playing'>('joining');
-    const [players, setPlayers] = useState<string[]>(gameLobby.playersJoined);
-    const [eventsReceived, setEventsReceived] = useState<TestMessage[]>([]);
+    const [players, setPlayers] = useState<UserInfo[]>(gameLobby.playersJoined);
     const maxPlayers: number = gameLobby.maxPlayers;
 
     function onExit() {
@@ -28,12 +27,12 @@ export default function Game({gameEventSource, username, onGameExit, gameLobby}:
     }
 
     function onJoin() {
-        gameEventSource.addEventListener('lobby-players-update', (event) => {
+        gameEventSource.addEventListener('lobby-update', (event) => {
             const lobbyUpdate: LobbyUpdate = JSON.parse(event.data);
             if (lobbyUpdate.action.toLowerCase() === 'joined')
-                setPlayers([...players, lobbyUpdate.username]);
+                setPlayers([...players, lobbyUpdate.userInfo]);
             else
-                setPlayers(players.filter(player => player !== lobbyUpdate.username));
+                setPlayers(players.filter(player => player !== lobbyUpdate.userInfo));
         });
         gameEventSource.addEventListener('game-start', onGameStart);
         setGameState('waiting');
@@ -42,16 +41,7 @@ export default function Game({gameEventSource, username, onGameExit, gameLobby}:
     function onGameStart() {
         //   remove lobby listeners
         //   add game events listeners (cards, player moves...)
-        gameEventSource.addEventListener('test-event', (event) => {
-            console.log(event.data);
-            setEventsReceived([...eventsReceived, event.data]);
-            console.log(eventsReceived.length);
-        });
         setGameState('playing');
-    }
-
-    function onPublish() {
-        axiosConfigured.post(`/games/test/${gameLobby.lobbyName}/${username}`, {message: (Math.random() + 1).toString(36).substring(7)});
     }
 
     useEffect(() => {
@@ -61,30 +51,19 @@ export default function Game({gameEventSource, username, onGameExit, gameLobby}:
             gameEventSource.onopen = onJoin;
     },[gameEventSource]);
 
-    if (gameState === 'playing')
-        return (
-            <div>
-                <button onClick={onExit}>Выйти (2 НЕДЕЛИ ЛОУ ПРИОРИТИ)</button>
-                <button onClick={onPublish}>Паблишшш</button>
-                Ивенты:
-                <ul>
-                    {eventsReceived.map((message, i) => {
-                        console.log("ee");
-                        return <li key={i}>{message.username}: {message.message}</li>
-                    })}</ul>
-            </div>
-        );
-    else if (gameState === 'waiting')
+    if (gameState === 'waiting')
         return (
             <div>
                 Ожидание игроков: {players.length} / {maxPlayers}:
                 <ul>
                     {players.map(player =>
-                        <li key={player}>{player === gameLobby.ownerName ? "(HOST)" : ""}{player}</li>
+                        <li key={player.username}>
+                            <p>{player === gameLobby.owner ? `(HOST) ${player.username}` : ""}</p>
+                        </li>
                     )}
                 </ul>
                 <button onClick={onExit}>Выйти</button>
-                {username === gameLobby.ownerName &&
+                {username === gameLobby.owner.username &&
                     <div>
                         <button onClick={onClose}>Закрыть</button>
                         <button onClick={onGameStart}>Старт</button>

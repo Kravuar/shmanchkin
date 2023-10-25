@@ -16,6 +16,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Username {
+    String message() default "Неподходящее имя пользователя.";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

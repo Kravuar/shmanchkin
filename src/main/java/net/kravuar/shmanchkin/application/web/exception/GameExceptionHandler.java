@@ -1,5 +1,7 @@
 package net.kravuar.shmanchkin.application.web.exception;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import net.kravuar.shmanchkin.domain.model.exceptions.GameException;
 import net.kravuar.shmanchkin.domain.model.exceptions.UserIsIdleException;
 import org.springframework.http.HttpStatus;
@@ -30,6 +32,14 @@ public class GameExceptionHandler {
     public List<String> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
         return ex.getBindingResult().getFieldErrors().stream()
                 .map(fieldError -> String.format("%s: %s", fieldError.getField(), fieldError.getDefaultMessage()))
+                .toList();
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
+    public List<String> handleConstraintViolation(ConstraintViolationException ex) {
+        return ex.getConstraintViolations().stream()
+                .map(ConstraintViolation::getMessage)
                 .toList();
     }
 }
