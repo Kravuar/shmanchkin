@@ -10,10 +10,7 @@ import lombok.Setter;
 public class UserInfo {
     private String username;
     private Game game = null;
-
-    public UserInfo(String username) {
-        this.username = username;
-    }
+    private Player player = null;
 
     public boolean isIdle() {
         return game == null;
@@ -22,5 +19,6 @@ public class UserInfo {
     public void toIdle() {
         this.username = null;
         this.game = null;
+        this.player = null;
     }
 }

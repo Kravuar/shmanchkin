@@ -1,13 +1,15 @@
 package net.kravuar.shmanchkin.application.services;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import net.kravuar.shmanchkin.domain.model.dto.GameDTO;
 import net.kravuar.shmanchkin.domain.model.dto.GameFormDTO;
-import net.kravuar.shmanchkin.domain.model.events.GameEvent;
+import net.kravuar.shmanchkin.domain.model.dto.events.GameEventDTO;
+import net.kravuar.shmanchkin.domain.model.dto.events.LobbyUpdateDTO;
 import net.kravuar.shmanchkin.domain.model.events.LobbyPlayerUpdate;
 import net.kravuar.shmanchkin.domain.model.exceptions.AlreadyInGameException;
 import net.kravuar.shmanchkin.domain.model.exceptions.GameAlreadyExistsException;
 import net.kravuar.shmanchkin.domain.model.exceptions.GameNotFoundException;
+import net.kravuar.shmanchkin.domain.model.exceptions.UserIsIdleException;
 import net.kravuar.shmanchkin.domain.model.game.Game;
 import net.kravuar.shmanchkin.domain.model.game.UserInfo;
 import org.springframework.context.ApplicationEventPublisher;
@@ -20,7 +22,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,22 +30,21 @@ import java.util.concurrent.ConcurrentHashMap;
 public class GameService {
     private final ApplicationEventPublisher publisher;
     private final Map<String, Game> games = new ConcurrentHashMap<>();
-    @Getter // TODO: getter for test purposes, remove
     private final UserInfo currentUser;
 
-    public Collection<Game> getGameList() {
-        return Collections.unmodifiableCollection(games.values());
+    public Collection<GameDTO> getGameList() {
+        return games.values().stream()
+                .map(GameDTO::new).toList();
     }
 
     public void createGame(GameFormDTO gameForm) {
-        System.out.println("Service " + gameForm.getLobbyName() + ' ' + gameForm.getOwnerName() + ' ' + gameForm.getMaxPlayers());
         if (!currentUser.isIdle())
             throw new AlreadyInGameException(currentUser.getGame().getLobbyName());
         var game = games.putIfAbsent(
                 gameForm.getLobbyName(),
                 new Game(
                         gameForm.getLobbyName(),
-                        gameForm.getOwnerName(),
+                        currentUser,
                         gameForm.getMaxPlayers()
                 )
         );
@@ -52,8 +52,7 @@ public class GameService {
             throw new GameAlreadyExistsException(game.getLobbyName());
     }
 
-    public synchronized Flux<ServerSentEvent<GameEvent>> joinGame(String lobbyName, String username) {
-        System.out.println("Join " + lobbyName + ' ' + username);
+    public synchronized Flux<ServerSentEvent<GameEventDTO>> joinGame(String lobbyName, String username) {
         if (!currentUser.isIdle())
             throw new AlreadyInGameException(currentUser.getGame().getLobbyName());
 
@@ -64,22 +63,27 @@ public class GameService {
         currentUser.setGame(game);
         currentUser.setUsername(username);
 
-//        TODO: this method gets stuck in some loop, resulting in usernamealreadytaken
 //        Probably could also store currentUser for the stream via .contextWrite
         return Flux.create(sink -> {
             MessageHandler handler = message -> {
-                var gameEvent = (GameEvent) message.getPayload();
-                var event = ServerSentEvent.<GameEvent> builder()
+                var gameEvent = (GameEventDTO) message.getPayload();
+                var event = ServerSentEvent.<GameEventDTO>builder()
                         .event(gameEvent.getEventType())
                         .data(gameEvent)
                         .build();
                 sink.next(event);
             };
             sink.onCancel(() -> {
-                game.unsubscribe(handler, currentUser);
-                currentUser.toIdle();
-                publisher.publishEvent(new LobbyPlayerUpdate(lobbyName, currentUser, "lobby-players-update", LobbyPlayerUpdate.LobbyPlayerAction.LEFT));
-            });
+                        currentUser.toIdle();
+                        game.unsubscribe(handler, currentUser);
+                        publisher.publishEvent(
+                                new LobbyPlayerUpdate(
+                                        game,
+                                        currentUser,
+                                        LobbyPlayerUpdate.LobbyPlayerAction.LEFT)
+                        );
+                    }
+            );
             try {
                 game.subscribe(handler, currentUser);
             } catch (Exception joinFailedException) {
@@ -87,8 +91,20 @@ public class GameService {
                 sink.error(joinFailedException);
                 sink.complete();
             }
-            publisher.publishEvent(new LobbyPlayerUpdate(lobbyName, currentUser, "lobby-players-update", LobbyPlayerUpdate.LobbyPlayerAction.JOINED));
+            publisher.publishEvent(
+                    new LobbyPlayerUpdate(
+                            game,
+                            currentUser,
+                            LobbyPlayerUpdate.LobbyPlayerAction.JOINED
+                    )
+            );
         }, FluxSink.OverflowStrategy.LATEST);
+    }
+
+    public void startGame() {
+        if (currentUser.isIdle())
+            throw new UserIsIdleException();
+        currentUser.getGame().start();
     }
 
     public boolean closeGame() {
@@ -97,9 +113,8 @@ public class GameService {
         return closedGame != null;
     }
 
-    @EventListener(GameEvent.class)
-    public void gameEventListener(GameEvent event) {
-        var game = games.get(event.getLobbyName());
-        game.publishEvent(new GenericMessage<>(event));
+    @EventListener(LobbyPlayerUpdate.class)
+    public void lobbyUpdateHandler(LobbyPlayerUpdate event) {
+        event.getGame().publishEvent(new GenericMessage<>(new LobbyUpdateDTO(event)));
     }
 }

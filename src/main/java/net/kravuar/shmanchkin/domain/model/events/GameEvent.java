@@ -1,14 +1,12 @@
 package net.kravuar.shmanchkin.domain.model.events;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import net.kravuar.shmanchkin.domain.model.game.Game;
 
 @Getter
 @RequiredArgsConstructor
 public abstract class GameEvent {
-    @JsonIgnore
-    private final String lobbyName;
-    private final String eventType;
+    private final Game game;
 }
 
