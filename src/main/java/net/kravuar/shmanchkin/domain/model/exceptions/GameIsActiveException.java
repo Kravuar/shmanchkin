@@ -6,6 +6,6 @@ import lombok.Getter;
 public class GameIsActiveException extends GameException {
 
     public GameIsActiveException(String lobbyName) {
-        super(lobbyName, "Game with name " + lobbyName + " is active.");
+        super(lobbyName, "Лобби с названием " + lobbyName + " уже запущено.");
     }
 }

@@ -7,7 +7,7 @@ public class UsernameTakenException extends GameException {
     private final String username;
 
     public UsernameTakenException(String lobbyName, String username) {
-        super(lobbyName, "Username " + username + " already taken in lobby " + lobbyName + ".");
+        super(lobbyName, "Имя пользователя " + username + " уже занято в лобби с названием " + lobbyName + ".");
         this.username = username;
     }
 }

@@ -6,6 +6,6 @@ import lombok.Getter;
 public class AlreadyInGameException extends GameException {
 
     public AlreadyInGameException(String lobbyName) {
-        super(lobbyName, "Already playing in " + lobbyName + " lobby.");
+        super(lobbyName, "Уже в игре с названием " + lobbyName + ".");
     }
 }

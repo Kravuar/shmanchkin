@@ -6,6 +6,6 @@ import lombok.Getter;
 public class GameIsFullException extends GameException {
 
     public GameIsFullException(String lobbyName) {
-        super(lobbyName, "Game with name " + lobbyName + " is full.");
+        super(lobbyName, "Лобби с названием " + lobbyName + " заполнено.");
     }
 }

@@ -8,17 +8,13 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class UserInfo {
-    private String username;
-    private Game game = null;
     private Player player = null;
 
     public boolean isIdle() {
-        return game == null;
+        return player == null;
     }
 
     public void toIdle() {
-        this.username = null;
-        this.game = null;
         this.player = null;
     }
 }

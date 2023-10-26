@@ -6,6 +6,6 @@ import lombok.Getter;
 public class UserIsIdleException extends RuntimeException {
 
     public UserIsIdleException() {
-        super("You are idle.");
+        super("Вы не в игре.");
     }
 }

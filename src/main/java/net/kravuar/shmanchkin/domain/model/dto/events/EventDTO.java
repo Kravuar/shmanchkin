@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public abstract class GameEventDTO {
+public abstract class EventDTO {
     @JsonIgnore
     private final String eventType;
 }
