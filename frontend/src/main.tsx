@@ -1,0 +1,87 @@
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import {ReactQueryDevtools} from "@tanstack/react-query-devtools";
+import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
+import {createBrowserRouter, RouterProvider} from "react-router-dom";
+import './index.css'
+import chest from './assets/chest.png'
+import {ArrowLeftIcon, ArrowPathIcon} from "@heroicons/react/24/outline";
+
+
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 1000 * 60 * 2,
+            refetchOnWindowFocus: false,
+            refetchOnMount: true,
+        }
+    }
+})
+
+const router = createBrowserRouter([
+    {
+        path: "/",
+        element: <div className={'text-white bg-stone-900 w-full min-h-screen pt-[106px] pb-[80px]'}>
+            <div className={'mx-auto max-w-[909px] rounded-[36px] bg-stone-700 text-[20px] pt-8 text-center'}>
+                <div className={'flex ps-12'}>
+                    <button>
+                        <ArrowLeftIcon className={'w-6 h-6 stroke-[3px]'}/>
+                    </button>
+                </div>
+                <table className={'w-full'}>
+                    <thead>
+                    <tr className={'font-bold h-[80px] shadow-2xl'}>
+                        <th className={'w-[400px]'}>
+                            Название сервера
+                        </th>
+                        <th className={'w-[120px]'}>
+                            Игроки
+                        </th>
+                        <th className={'w-[382px]'}>
+                            Создатель
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody className={'divide-y-4 divide-stone-900'}>
+                    {
+                        Array.from({length: 8}, (i, k) => (
+                            <tr key={k} className={'h-[72px]  divide-x-4 divide-stone-900 '}>
+                                <td className={''}>
+                                    Такое вот название у сервера!?
+                                </td>
+                                <td className={''}>
+                                    4/4
+                                </td>
+                                <td className={''}>
+                                    hetEro_phobE
+                                </td>
+                            </tr>
+                        ))
+                    }
+                    </tbody>
+                </table>
+                <div style={{
+                    boxShadow: "0px 0px 250px 0px rgba(28, 25, 23, 0.60)"
+                }} className={'pt-8 pb-[36px] pe-[78px] flex justify-end gap-7 items-center'}>
+                    <button className={'bg-red-400 w-[52px] h-[52px] rounded-full flex items-center justify-center'}>
+                        <ArrowPathIcon className={'w-6 h-6'}/>
+                    </button>
+                    <button style={{
+                        backgroundImage: `url(${chest})`
+                    }} className={'h-20 w-[90px] bg-contain bg-no-repeat'}>
+
+                    </button>
+                </div>
+            </div>
+        </div>,
+    },
+])
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+    <React.StrictMode>
+        <QueryClientProvider client={queryClient}>
+            <RouterProvider router={router}/>
+            <ReactQueryDevtools initialIsOpen={false}/>
+        </QueryClientProvider>
+    </React.StrictMode>,
+)
