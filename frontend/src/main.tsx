@@ -22,7 +22,7 @@ const router = createBrowserRouter([
     {
         path: "/",
         element: <div className={'text-white bg-stone-900 w-full min-h-screen pt-[106px] pb-[80px]'}>
-            <div className={'mx-auto max-w-[909px] rounded-[36px] bg-stone-700 text-[20px] pt-8 text-center'}>
+            <div className={'mx-auto max-w-[909px] rounded-[36px] bg-stone-700 text-[20px] pt-8 text-center shadow-2xl shadow-stone-500'}>
                 <div className={'flex ps-12'}>
                     <button>
                         <ArrowLeftIcon className={'w-6 h-6 stroke-[3px]'}/>
@@ -62,7 +62,7 @@ const router = createBrowserRouter([
                 </table>
                 <div style={{
                     boxShadow: "0px 0px 250px 0px rgba(28, 25, 23, 0.60)"
-                }} className={'pt-8 pb-[36px] pe-[78px] flex justify-end gap-7 items-center'}>
+                }} className={'pt-8 pb-[36px] pe-[78px] flex justify-end gap-7 items-center rounded-b-[36px]'}>
                     <button className={'bg-red-400 w-[52px] h-[52px] rounded-full flex items-center justify-center'}>
                         <ArrowPathIcon className={'w-6 h-6'}/>
                     </button>
