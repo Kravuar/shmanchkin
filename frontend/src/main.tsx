@@ -21,45 +21,51 @@ const queryClient = new QueryClient({
 const router = createBrowserRouter([
     {
         path: "/",
-        element: <div className={'text-white bg-stone-900 w-full min-h-screen pt-[106px] pb-[80px]'}>
-            <div className={'mx-auto max-w-[909px] rounded-[36px] bg-stone-700 text-[20px] pt-8 text-center shadow-2xl shadow-stone-500'}>
+        element: <div className={'text-white bg-stone-800 w-full min-h-screen pt-[106px] pb-[80px]'}>
+
+            <div style={{
+                filter: "drop-shadow(0px 0px 110px #1C1917)"
+            }}
+                className={'mx-auto max-w-[909px] rounded-[36px] bg-stone-700 text-[20px] pt-8 text-center'}>
                 <div className={'flex ps-12'}>
                     <button>
-                        <ArrowLeftIcon className={'w-6 h-6 stroke-[3px]'}/>
+                        <ArrowLeftIcon className={'w-8 h-8 stroke-[3px]'}/>
                     </button>
                 </div>
-                <table className={'w-full'}>
-                    <thead>
-                    <tr className={'font-bold h-[80px] shadow-2xl'}>
-                        <th className={'w-[400px]'}>
-                            Название сервера
-                        </th>
-                        <th className={'w-[120px]'}>
-                            Игроки
-                        </th>
-                        <th className={'w-[382px]'}>
-                            Создатель
-                        </th>
-                    </tr>
-                    </thead>
-                    <tbody className={'divide-y-4 divide-stone-900'}>
-                    {
-                        Array.from({length: 8}, (i, k) => (
-                            <tr key={k} className={'h-[72px]  divide-x-4 divide-stone-900 '}>
-                                <td className={''}>
-                                    Такое вот название у сервера!?
-                                </td>
-                                <td className={''}>
-                                    4/4
-                                </td>
-                                <td className={''}>
-                                    hetEro_phobE
-                                </td>
-                            </tr>
-                        ))
-                    }
-                    </tbody>
-                </table>
+                <div className={'max-h-[700px] overflow-y-auto'}>
+                    <table className={'w-full'}>
+                        <thead>
+                        <tr className={'top-0 sticky bg-stone-700 font-bold h-[80px] shadow-2xl'}>
+                            <th className={'w-[400px]'}>
+                                Название сервера
+                            </th>
+                            <th className={'w-[120px]'}>
+                                Игроки
+                            </th>
+                            <th className={'w-[382px]'}>
+                                Создатель
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody className={'divide-y-4 divide-stone-900'}>
+                        {
+                            Array.from({length: 14}, (i, k) => (
+                                <tr key={k} className={'h-[72px] divide-x-4 divide-stone-900 '}>
+                                    <td className={''}>
+                                        Такое вот название у сервера!?
+                                    </td>
+                                    <td className={''}>
+                                        4/4
+                                    </td>
+                                    <td className={''}>
+                                        hetEro_phobE
+                                    </td>
+                                </tr>
+                            ))
+                        }
+                        </tbody>
+                    </table>
+                </div>
                 <div style={{
                     boxShadow: "0px 0px 250px 0px rgba(28, 25, 23, 0.60)"
                 }} className={'pt-8 pb-[36px] pe-[78px] flex justify-end gap-7 items-center rounded-b-[36px]'}>
