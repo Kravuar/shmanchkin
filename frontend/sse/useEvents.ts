@@ -1,6 +1,6 @@
 import {useEffect} from "react";
 
-export const useEvents = (url: string, listeners: Record<string, EventCallback>) => {
+export const useEvents = (url: string, listeners: Record<string, (e: MessageEvent<string>) => void>) => {
     useEffect(() => {
         const source = new EventSource(url)
         Object.entries(listeners).forEach(([evt, cb]) => {
