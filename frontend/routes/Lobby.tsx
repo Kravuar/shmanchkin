@@ -51,7 +51,7 @@ export const Lobby = () => {
                 <div style={{
                     boxShadow: "0px 0px 250px 0px rgba(28, 25, 23, 0.60)"
                 }} className={'pt-8 pb-[36px] pe-[78px] flex justify-end gap-7 items-center rounded-b-[36px]'}>
-                    <button className={'bg-red-400 w-[52px] h-[52px] rounded-full flex items-center justify-center'}>
+                    <button className={'bg-stone-500 w-[52px] h-[52px] rounded-full flex items-center justify-center'}>
                         <ArrowPathIcon className={'w-6 h-6'}/>
                     </button>
                     <button style={{
