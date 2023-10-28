@@ -6,6 +6,7 @@ import {createBrowserRouter, RouterProvider} from "react-router-dom";
 import './index.css'
 
 import {Lobby} from "@/routes/Lobby";
+import {CreateGame} from "@/routes/CreateGame.tsx";
 
 
 const queryClient = new QueryClient({
@@ -23,6 +24,10 @@ const router = createBrowserRouter([
         path: "/",
         element: <Lobby/>,
     },
+    {
+        path: "/create-game",
+        element: <CreateGame/>
+    }
 ])
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

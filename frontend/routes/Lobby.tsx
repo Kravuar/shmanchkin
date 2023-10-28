@@ -42,7 +42,7 @@ export const Lobby = () => {
         return []
     }
     return (
-        <div className={'text-white bg-stone-800 w-full min-h-screen pt-[50px]'}>
+        <div className={'text-white bg-stone-800 w-full min-h-screen flex place-items-center'}>
             <div style={{
                 filter: "drop-shadow(0px 0px 110px #1C1917)"
             }}
