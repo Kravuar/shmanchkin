@@ -38,11 +38,11 @@ public class GameService {
                 .map(DetailedGameDTO::new).toList();
     }
 
-    public Flux<ServerSentEvent<GameListUpdateDTO>> subscribeToGameListUpdates() {
+    public Flux<ServerSentEvent<EventDTO>> subscribeToGameListUpdates() {
         return Flux.create(sink -> {
             MessageHandler handler = message -> {
-                var gameEvent = (GameListUpdateDTO) message.getPayload();
-                var event = ServerSentEvent.<GameListUpdateDTO>builder()
+                var gameEvent = (EventDTO) message.getPayload();
+                var event = ServerSentEvent.<EventDTO>builder()
                         .event(gameEvent.getEventType())
                         .data(gameEvent)
                         .build();
@@ -71,6 +71,7 @@ public class GameService {
                 null,
                 null
         );
+        currentUser.setPlayer(owner);
         gameListChannel.send(new GenericMessage<>(new GameListUpdateDTO(game, GameListUpdateAction.CREATED)));
         gameListChannel.send(new GenericMessage<>(new GameListFullUpdateDTO(this.games.values())));
     }
@@ -143,14 +144,15 @@ public class GameService {
     }
 
     public void closeGame() {
-        if (currentUser.isIdle())
-            throw new UserIsIdleException();
+        if (currentUser.getPlayer() == null || currentUser.getPlayer().getGame() == null)
+            throw new UserIsIdleException("Нет созданной игры.");
         var game = currentUser.getPlayer().getGame();
         if (!Objects.equals(game.getOwner(), currentUser.getPlayer()))
             throw new ForbiddenActionException(game.getLobbyName(), "Закрыть игру");
         game.close();
         games.remove(game.getLobbyName());
         gameListChannel.send(new GenericMessage<>(new GameListUpdateDTO(game, GameListUpdateAction.CLOSED)));
+        gameListChannel.send(new GenericMessage<>(new GameListFullUpdateDTO(games.values())));
     }
 
     public void sendMessage(String message) {

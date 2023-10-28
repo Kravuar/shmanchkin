@@ -60,7 +60,7 @@ public class GameController {
             )
     })
     @GetMapping("/subscribe")
-    public Flux<ServerSentEvent<GameListUpdateDTO>> subscribeToGameListUpdates() {
+    public Flux<ServerSentEvent<EventDTO>> subscribeToGameListUpdates() {
         return gameService.subscribeToGameListUpdates();
     }
 

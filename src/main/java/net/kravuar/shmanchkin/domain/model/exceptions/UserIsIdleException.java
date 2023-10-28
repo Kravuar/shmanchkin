@@ -5,7 +5,11 @@ import lombok.Getter;
 @Getter
 public class UserIsIdleException extends RuntimeException {
 
+    public UserIsIdleException(String message) {
+        super("Пользователь неактивен. " + message);
+    }
+
     public UserIsIdleException() {
-        super("Вы не в игре.");
+        super("Пользователь неактивен.");
     }
 }
