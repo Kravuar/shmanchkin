@@ -1,11 +1,7 @@
-server:
-  servlet:
-    contextPath:
-      /api
-
 web:
   allowed-origins:
     - http://localhost:3000
+
 server:
   http2:
     enabled: true
