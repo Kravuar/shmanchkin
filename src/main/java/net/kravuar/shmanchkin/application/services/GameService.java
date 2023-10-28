@@ -149,6 +149,8 @@ public class GameService {
         if (!Objects.equals(game.getOwner(), currentUser.getPlayer()))
             throw new ForbiddenActionException(game.getLobbyName(), "Закрыть игру");
         game.close();
+        games.remove(game.getLobbyName());
+        gameListChannel.send(new GenericMessage<>(new GameListUpdateDTO(game, GameListUpdateAction.CLOSED)));
     }
 
     public void sendMessage(String message) {
