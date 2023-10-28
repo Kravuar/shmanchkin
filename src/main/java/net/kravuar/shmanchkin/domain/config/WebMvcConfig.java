@@ -6,14 +6,12 @@ import net.kravuar.shmanchkin.domain.model.game.UserInfo;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.annotation.SessionScope;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
-
-import java.util.List;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @RequiredArgsConstructor
+
 public class WebMvcConfig {
     private final WebProps webProps;
 
@@ -24,15 +22,13 @@ public class WebMvcConfig {
     }
 
     @Bean
-    public CorsFilter corsFilter() {
-        var configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(webProps.getAllowedOrigins());
-        configuration.setAllowedHeaders(List.of("Content-Type"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH"));
-
-        var source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-
-        return new CorsFilter(source);
+    public WebMvcConfigurer corsMVCMappingConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**")
+                        .allowedOrigins(webProps.getAllowedOrigins().toArray(String[]::new));
+            }
+        };
     }
 }
