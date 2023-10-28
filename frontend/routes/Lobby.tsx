@@ -1,4 +1,3 @@
-import chest from 'assets/chest.png'
 import {ArrowLeftIcon, ArrowPathIcon} from "@heroicons/react/24/outline";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {api} from "@/api";
@@ -43,22 +42,24 @@ export const Lobby = () => {
         return []
     }
     return (
-        <div className={'text-white bg-stone-800 w-full min-h-screen pt-[106px] pb-[80px]'}>
+        <div className={'text-white bg-stone-800 w-full min-h-screen pt-[50px]'}>
             <div style={{
                 filter: "drop-shadow(0px 0px 110px #1C1917)"
             }}
-                 className={'mx-auto max-w-[909px] rounded-[36px] bg-stone-700 text-[20px] pt-8 text-center'}>
-                <div className={'flex ps-12 gap-8'}>
-                    <button>
+                 className={'mx-auto max-w-[909px] rounded-[36px] bg-stone-700 text-[20px] pt-6 text-center'}>
+                <div className={'flex px-12 pb-4 justify-between'}>
+                    <button onClick={() => console.log('go back')}>
                         <ArrowLeftIcon className={'w-8 h-8 stroke-[3px]'}/>
                     </button>
-                    {
-                        games ? (
-                            <div className={'text-2xl font-bold'}>
-                                Найдено: {games.length}
-                            </div>
-                        ) : null
-                    }
+                    <h1 className={'text-[32px] font-bold'}>
+                        Список серверов {games ? `(${games.length})` : null}
+                    </h1>
+                    <button onClick={refresh}
+                            className={'bg-stone-500 w-[48px] h-[48px] rounded-full flex items-center justify-center'} style={{
+                        filter: "drop-shadow(0px 0px 13px rgba(0, 0, 0, 0.25))"
+                    }}>
+                        <ArrowPathIcon className={'w-[34px] h-[34px] stroke-[2.3px]' + (isFetching ? ' animate-spin' : '')}/>
+                    </button>
                 </div>
                 <div className={'max-h-[700px] overflow-y-auto'}>
                     <table className={'w-full'}>
@@ -96,19 +97,6 @@ export const Lobby = () => {
                         }
                         </tbody>
                     </table>
-                </div>
-                <div style={{
-                    boxShadow: "0px 0px 250px 0px rgba(28, 25, 23, 0.60)"
-                }} className={'pt-8 pb-[36px] pe-[78px] flex justify-end gap-7 items-center rounded-b-[36px]'}>
-                    <button onClick={refresh}
-                            className={'bg-stone-500 w-[52px] h-[52px] rounded-full flex items-center justify-center'}>
-                        <ArrowPathIcon className={'w-6 h-6' + (isFetching ? ' animate-spin' : '')}/>
-                    </button>
-                    <button style={{
-                        backgroundImage: `url(${chest})`
-                    }} className={'h-20 w-[90px] bg-contain bg-no-repeat'}>
-
-                    </button>
                 </div>
             </div>
         </div>
