@@ -5,8 +5,9 @@ import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {createBrowserRouter, RouterProvider} from "react-router-dom";
 import './index.css'
 
-import {Lobby} from "@/routes/Lobby";
+import {Games} from "@/routes/Games.tsx";
 import {CreateGame} from "@/routes/CreateGame.tsx";
+import {Game} from "@/routes/Game.tsx";
 
 
 const queryClient = new QueryClient({
@@ -21,12 +22,16 @@ const queryClient = new QueryClient({
 
 const router = createBrowserRouter([
     {
-        path: "/",
-        element: <Lobby/>,
+        path: "/games",
+        element: <Games/>,
     },
     {
         path: "/create-game",
         element: <CreateGame/>
+    },
+    {
+        path: "/games/:lobbyName/:username",
+        element: <Game/>
     }
 ])
 

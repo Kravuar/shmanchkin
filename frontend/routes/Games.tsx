@@ -10,7 +10,7 @@ type Game = {
     playersJoined: Array<{ username: string }>
 }
 
-export const Lobby = () => {
+export const Games = () => {
     const client = useQueryClient()
     const {data: games, isFetching} = useQuery({
         queryFn: async () => (await api.get('/games')).data as Game[],
@@ -35,7 +35,7 @@ export const Lobby = () => {
             client.setQueryData(['games'], data.games)
         }
     }), [client])
-    useEvents("api/games/subscribe", listeners)
+    useEvents("/api/games/subscribe", listeners)
     const fillRows = (gamesCount: number): Array<null> => {
         if (gamesCount < 8)
             return Array.from({length: 8 - gamesCount})
