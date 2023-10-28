@@ -114,6 +114,13 @@ public class GameService {
         }, FluxSink.OverflowStrategy.LATEST);
     }
 
+    public void leaveGame() {
+        if (currentUser.isIdle())
+            throw new UserIsIdleException();
+        var game = currentUser.getPlayer().getGame();
+        game.removePlayer(currentUser.getPlayer());
+    }
+
     public void kickPlayer(String username) {
         if (currentUser.isIdle())
             throw new UserIsIdleException();

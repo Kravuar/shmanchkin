@@ -168,5 +168,15 @@ public class GameController {
         gameService.kickPlayer(username);
     }
 
-    //    Leaving is done via sse cancellation
+    @Operation(
+            summary = "Покинуть игру.",
+            description = "Выходит из текущей игры. Также можно выйти завершив SSE со стороны клиента."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Игра покинута."),
+    })
+    @PutMapping("/leave")
+    public void leave() {
+        gameService.leaveGame();
+    }
 }
