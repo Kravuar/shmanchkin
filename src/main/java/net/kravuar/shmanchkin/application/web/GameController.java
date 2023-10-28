@@ -150,7 +150,7 @@ public class GameController {
             @ApiResponse(responseCode = "400", description = "Пользователь не в игре или пустое сообщение."),
     })
     @PostMapping("/sendMessage")
-    public void sendMessage(@NotBlank @Length(min = 1) String message) {
+    public void sendMessage(@RequestBody @NotBlank @Length(min = 1) String message) {
         gameService.sendMessage(message);
     }
 
