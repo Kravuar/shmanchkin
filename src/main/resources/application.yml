@@ -6,3 +6,8 @@ server:
 web:
   allowed-origins:
     - http://localhost:3000
+server:
+  http2:
+    enabled: true
+  servlet:
+    context-path: /api
