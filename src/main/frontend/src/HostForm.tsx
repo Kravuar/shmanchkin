@@ -1,6 +1,5 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {GameLobby} from "./Types";
-import {json} from "stream/consumers";
 import {axiosConfigured} from "./Utils";
 
 type HostFormProps = {

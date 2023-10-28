@@ -2,6 +2,7 @@ package net.kravuar.shmanchkin.application.web.exception;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import net.kravuar.shmanchkin.domain.model.exceptions.ForbiddenActionException;
 import net.kravuar.shmanchkin.domain.model.exceptions.GameException;
 import net.kravuar.shmanchkin.domain.model.exceptions.UserIsIdleException;
 import org.springframework.http.HttpStatus;
@@ -14,10 +15,9 @@ import java.util.List;
 
 @RestControllerAdvice
 public class GameExceptionHandler {
-
-    @ExceptionHandler(GameException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String gameExceptionHandler(GameException exception) {
+    @ExceptionHandler(ForbiddenActionException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public String gameExceptionHandler(ForbiddenActionException exception) {
         return exception.getMessage();
     }
 
@@ -41,5 +41,11 @@ public class GameExceptionHandler {
         return ex.getConstraintViolations().stream()
                 .map(ConstraintViolation::getMessage)
                 .toList();
+    }
+
+    @ExceptionHandler(GameException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String gameExceptionHandler(GameException exception) {
+        return exception.getMessage();
     }
 }

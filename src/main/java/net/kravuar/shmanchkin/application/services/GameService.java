@@ -3,9 +3,15 @@ package net.kravuar.shmanchkin.application.services;
 import lombok.RequiredArgsConstructor;
 import net.kravuar.shmanchkin.domain.model.dto.DetailedGameDTO;
 import net.kravuar.shmanchkin.domain.model.dto.GameFormDTO;
-import net.kravuar.shmanchkin.domain.model.dto.events.*;
+import net.kravuar.shmanchkin.domain.model.dto.events.EventDTO;
+import net.kravuar.shmanchkin.domain.model.dto.events.GameListFullUpdateDTO;
+import net.kravuar.shmanchkin.domain.model.dto.events.GameListUpdateDTO;
+import net.kravuar.shmanchkin.domain.model.dto.events.MessageDTO;
 import net.kravuar.shmanchkin.domain.model.exceptions.*;
-import net.kravuar.shmanchkin.domain.model.game.*;
+import net.kravuar.shmanchkin.domain.model.game.Game;
+import net.kravuar.shmanchkin.domain.model.game.GameListUpdateAction;
+import net.kravuar.shmanchkin.domain.model.game.Player;
+import net.kravuar.shmanchkin.domain.model.game.UserInfo;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.messaging.MessageHandler;
@@ -17,6 +23,7 @@ import reactor.core.publisher.FluxSink;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @RequiredArgsConstructor
@@ -48,9 +55,10 @@ public class GameService {
     public void createGame(GameFormDTO gameForm) {
         if (!currentUser.isIdle())
             throw new AlreadyInGameException(currentUser.getPlayer().getGame().getLobbyName());
+        var owner = new Player(gameForm.getOwnerName());
         var game = new Game(
                 gameForm.getLobbyName(),
-                gameForm.getOwnerName()
+                owner
         );
         var previousGame = games.putIfAbsent(
                 gameForm.getLobbyName(),
@@ -58,17 +66,30 @@ public class GameService {
         );
         if (previousGame != null)
             throw new GameAlreadyExistsException(previousGame.getLobbyName());
-        currentUser.setPlayer(game.getOwner());
-        handleGameListUpdate(game, GameListUpdateAction.CREATED);
+        owner.setInfo(
+                game,
+                null,
+                null
+        );
+        gameListChannel.send(new GenericMessage<>(new GameListUpdateDTO(game, GameListUpdateAction.CREATED)));
+        gameListChannel.send(new GenericMessage<>(new GameListFullUpdateDTO(this.games.values())));
     }
 
     public synchronized Flux<ServerSentEvent<EventDTO>> joinGame(String lobbyName, String username) {
-        if (!currentUser.isIdle())
-            throw new AlreadyInGameException(currentUser.getPlayer().getGame().getLobbyName());
-
         var game = games.get(lobbyName);
         if (game == null)
             throw new GameNotFoundException(lobbyName);
+
+        Player newPlayer;
+
+        if (!currentUser.isIdle())
+            if (Objects.equals(username, game.getOwner().getUsername()))
+                newPlayer = game.getOwner();
+            else
+                throw new AlreadyInGameException(currentUser.getPlayer().getGame().getLobbyName());
+        else
+            newPlayer = new Player(username);
+
 
         return Flux.create(sink -> {
             MessageHandler handler = message -> {
@@ -79,30 +100,17 @@ public class GameService {
                         .build();
                 sink.next(event);
             };
-            sink.onCancel(() -> {
-                        game.removePlayer(currentUser.getPlayer());
-                        handleLobbyPlayerUpdate(
-                                game,
-                                currentUser.getPlayer(),
-                                LobbyPlayerUpdateAction.DISCONNECTED
-                        );
-                        currentUser.toIdle();
-                    }
-            );
             try {
-                var player = new Player(username, game);
-                currentUser.setPlayer(player);
-                game.addPlayer(handler, player);
+                newPlayer.setInfo(game, sink, handler);
+                game.addPlayer(newPlayer);
+                currentUser.setPlayer(newPlayer);
             } catch (Exception joinFailedException) {
 //                Means someone else joined within return of the flux and actual subscription
                 sink.error(joinFailedException);
                 sink.complete();
+                newPlayer.toIdle();
             }
-            handleLobbyPlayerUpdate(
-                    game,
-                    currentUser.getPlayer(),
-                    LobbyPlayerUpdateAction.CONNECTED
-            );
+            sink.onCancel(() -> game.removePlayer(newPlayer));
         }, FluxSink.OverflowStrategy.LATEST);
     }
 
@@ -110,45 +118,35 @@ public class GameService {
         if (currentUser.isIdle())
             throw new UserIsIdleException();
         var game = currentUser.getPlayer().getGame();
-        if (game.getOwner() != currentUser.getPlayer())
+        if (!Objects.equals(game.getOwner(), currentUser.getPlayer()))
             throw new ForbiddenActionException(game.getLobbyName(), "Выгнать игрока");
         var player = game.getPlayers().get(username);
         if (player == null)
             throw new PlayerNotFoundException(game.getLobbyName(), username);
-        handleLobbyPlayerUpdate(game, player, LobbyPlayerUpdateAction.KICKED);
         game.removePlayer(player);
     }
 
     public void startGame() {
         if (currentUser.isIdle())
             throw new UserIsIdleException();
-        currentUser.getPlayer().getGame().start();
+        var game = currentUser.getPlayer().getGame();
+        if (!Objects.equals(game.getOwner(), currentUser.getPlayer()))
+            throw new ForbiddenActionException(game.getLobbyName(), "Начать игру");
+        game.start();
     }
 
     public void closeGame() {
-        var game = games.remove(currentUser.getPlayer().getGame().getLobbyName());
-        if (game != null) {
-            handleGameListUpdate(game, GameListUpdateAction.CLOSED);
-            currentUser.toIdle();
-        }
-    }
-
-    private void handleLobbyPlayerUpdate(Game game, Player player, LobbyPlayerUpdateAction action) {
-        game.send(new GenericMessage<>(new LobbyUpdateDTO(player, action)));
-        game.send(new GenericMessage<>(new LobbyFullUpdateDTO(game.getPlayers().values())));
-        if (action == LobbyPlayerUpdateAction.KICKED)
-            game.sendTo(player, new GenericMessage<>(new KickedDTO()));
-    }
-
-    private void handleGameListUpdate(Game game, GameListUpdateAction action) {
-        gameListChannel.send(new GenericMessage<>(new GameListUpdateDTO(game, action)));
-        gameListChannel.send(new GenericMessage<>(new GameListFullUpdateDTO(this.games.values())));
+        if (currentUser.isIdle())
+            throw new UserIsIdleException();
+        var game = currentUser.getPlayer().getGame();
+        if (!Objects.equals(game.getOwner(), currentUser.getPlayer()))
+            throw new ForbiddenActionException(game.getLobbyName(), "Закрыть игру");
+        game.close();
     }
 
     public void sendMessage(String message) {
         if (currentUser.isIdle())
             throw new UserIsIdleException();
-        currentUser.getPlayer().getGame()
-                .send(new GenericMessage<>(new MessageDTO(currentUser.getPlayer(), message)));
+        currentUser.getPlayer().getGame().send(new MessageDTO(currentUser.getPlayer(), message));
     }
 }

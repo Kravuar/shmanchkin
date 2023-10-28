@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import net.kravuar.shmanchkin.application.services.GameService;
 import net.kravuar.shmanchkin.domain.model.dto.DetailedGameDTO;
@@ -66,7 +66,7 @@ public class GameController {
 
     @Operation(
             summary = "Создание лобби.",
-            description = "Создание лобби."
+            description = "Создание лобби, подключится нужно отдельно. "
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Игра создана."),
@@ -86,6 +86,7 @@ public class GameController {
             Возможны следующие ивенты:
                 На всех стадиях:
                     player-message
+                    game-status-change
                 В стадии ожидания:
                     player-connected/player-disconnected
                     players-full-update
@@ -99,12 +100,13 @@ public class GameController {
             @ApiResponse(responseCode = "200", description = "Успешное подключение.",
                     content = @Content(schema = @Schema(anyOf = {
                             MessageDTO.class,
+                            GameStatusChangedDTO.class,
                             LobbyUpdateDTO.class,
                             LobbyFullUpdateDTO.class,
                             KickedDTO.class
                     }))
             ),
-            @ApiResponse(responseCode = "400", description = "Невозможно подключиться к игре. Игра не найдена или пользователь уже в игре."),
+            @ApiResponse(responseCode = "400", description = "Невозможно подключиться к игре. Игра не найдена, либо пользователь уже в игре, либо игра заполнена, либо имя игрока уже занято, либо игра уже начата."),
     })
     @GetMapping("/join/{lobbyName}/{username}")
     public Flux<ServerSentEvent<EventDTO>> joinLobby(@PathVariable String lobbyName, @PathVariable @Valid @Username String username) {
@@ -113,10 +115,12 @@ public class GameController {
 
     @Operation(
             summary = "Закрытие лобби.",
-            description = "Закрытие лобби."
+            description = "Закрытие лобби текущего пользователя. Нужно быть хостом."
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Лобби успешно закрыто (если существовало)."),
+            @ApiResponse(responseCode = "200", description = "Лобби успешно закрыто."),
+            @ApiResponse(responseCode = "400", description = "Невозможно запустить игру. Пользователь не в игре."),
+            @ApiResponse(responseCode = "403", description = "Невозможно запустить игру. Пользователь не хост.")
     })
     @DeleteMapping("/close")
     public void closeLobby() {
@@ -125,11 +129,12 @@ public class GameController {
 
     @Operation(
             summary = "Старт лобби.",
-            description = "Запускает игру."
+            description = "Запускает игру. Нужно быть хостом."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Игра запущена."),
-            @ApiResponse(responseCode = "400", description = "Невозможно запустить игру. Лобби отсутствует или игра уже запущена."),
+            @ApiResponse(responseCode = "400", description = "Невозможно запустить игру. Пользователь не в игре или игра уже запущена."),
+            @ApiResponse(responseCode = "403", description = "Невозможно запустить игру. Пользователь не хост."),
     })
     @PutMapping("/start")
     public void startGame() {
@@ -145,21 +150,23 @@ public class GameController {
             @ApiResponse(responseCode = "400", description = "Пользователь не в игре или пустое сообщение."),
     })
     @PostMapping("/sendMessage")
-    public void sendMessage(@NotNull @Length(min = 1) String message) {
+    public void sendMessage(@NotBlank @Length(min = 1) String message) {
         gameService.sendMessage(message);
     }
 
     @Operation(
             summary = "Исключить игрока.",
-            description = "Исключает игрока из игры. (нужно быть хостом)."
+            description = "Исключает игрока из игры. Нужно быть хостом."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Игрок исключён."),
-            @ApiResponse(responseCode = "400", description = "Пользователь либо не в игре, либо не хост, либо игрок с таким именем не найден."),
+            @ApiResponse(responseCode = "400", description = "Пользователь либо не в игре, либо игрок с таким именем не найден."),
+            @ApiResponse(responseCode = "403", description = "Пользователь не хост."),
     })
     @PutMapping("/kickPlayer")
     public void kickPlayer(String username) {
         gameService.kickPlayer(username);
     }
-//    Leaving is done via sse cancellation
+
+    //    Leaving is done via sse cancellation
 }
