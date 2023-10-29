@@ -111,7 +111,7 @@ public class GameService {
                 sink.complete();
                 newPlayer.toIdle();
             }
-            sink.onCancel(() -> game.removePlayer(newPlayer));
+            sink.onDispose(() -> game.removePlayer(newPlayer));
         }, FluxSink.OverflowStrategy.LATEST);
     }
 
@@ -158,6 +158,7 @@ public class GameService {
     public void sendMessage(String message) {
         if (currentUser.isIdle())
             throw new UserIsIdleException();
+        System.out.println("MESSAGE: " + message);
         currentUser.getPlayer().getGame().send(new MessageDTO(currentUser.getPlayer(), message));
     }
 }
