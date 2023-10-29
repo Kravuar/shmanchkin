@@ -20,6 +20,7 @@ type PlayersUpdateEventData = {
     players: Array<{username: string}>
 }
 
+// TODO: прокрутка до последнего сообщеия
 export const Game = () => {
     const {lobbyName, username} = useParams()
     console.log(lobbyName, username)
