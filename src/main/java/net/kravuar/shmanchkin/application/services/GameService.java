@@ -91,8 +91,7 @@ public class GameService {
         else
             newPlayer = new Player(username);
 
-
-        return Flux.create(sink -> {
+        return Flux.<ServerSentEvent<EventDTO>>create(sink -> {
             MessageHandler handler = message -> {
                 var gameEvent = (EventDTO) message.getPayload();
                 var event = ServerSentEvent.<EventDTO>builder()
@@ -111,8 +110,8 @@ public class GameService {
                 sink.complete();
                 newPlayer.toIdle();
             }
-            sink.onDispose(() -> game.removePlayer(newPlayer));
-        }, FluxSink.OverflowStrategy.LATEST);
+        }, FluxSink.OverflowStrategy.LATEST)
+                .doOnTerminate(() -> game.removePlayer(newPlayer));
     }
 
     public void leaveGame() {
@@ -158,7 +157,6 @@ public class GameService {
     public void sendMessage(String message) {
         if (currentUser.isIdle())
             throw new UserIsIdleException();
-        System.out.println("MESSAGE: " + message);
         currentUser.getPlayer().getGame().send(new MessageDTO(currentUser.getPlayer(), message));
     }
 }
