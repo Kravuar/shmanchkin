@@ -1,6 +1,6 @@
-import {useEffect} from "react";
+import {DependencyList, useEffect} from "react";
 
-export const useEvents = (url: string, listeners: Record<string, (e: MessageEvent<string>) => void>) => {
+export const useEvents = (url: string, listeners: Record<string, (e: MessageEvent<string>) => void>, deps: DependencyList = []) => {
     useEffect(() => {
         const source = new EventSource(url)
         Object.entries(listeners).forEach(([evt, cb]) => {
@@ -10,5 +10,5 @@ export const useEvents = (url: string, listeners: Record<string, (e: MessageEven
             source.close()
             // maybe detach all listeners...
         }
-    }, [url, listeners])
+    }, [url, ...deps])
 }

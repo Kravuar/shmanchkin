@@ -2,7 +2,6 @@ import {ArrowLeftIcon, ArrowPathIcon} from "@heroicons/react/24/outline";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {api} from "@/api";
 import {useEvents} from "@/sse/useEvents.ts";
-import {useMemo} from "react";
 
 type Game = {
     lobbyName: string,
@@ -19,7 +18,7 @@ export const Games = () => {
     const refresh = () => {
         client.invalidateQueries({queryKey: ['games']})
     }
-    const listeners = useMemo(() => ({
+    useEvents("/api/games/subscribe", {
         'game-created': (e: MessageEvent<string>) => {
             console.log('created', e.data)
             // client.invalidateQueries({queryKey: ['games']})
@@ -34,8 +33,7 @@ export const Games = () => {
             }
             client.setQueryData(['games'], data.games)
         }
-    }), [client])
-    useEvents("/api/games/subscribe", listeners)
+    }, [client])
     const fillRows = (gamesCount: number): Array<null> => {
         if (gamesCount < 8)
             return Array.from({length: 8 - gamesCount})
