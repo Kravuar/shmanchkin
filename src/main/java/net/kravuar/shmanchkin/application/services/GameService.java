@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,9 +32,9 @@ public class GameService {
     private final Map<String, Game> games = new ConcurrentHashMap<>();
     private final SubscribableChannel gameListChannel = MessageChannels.publishSubscribe().getObject();
 
-    public Collection<DetailedGameDTO> getGameList() {
-        return games.values().stream()
-                .map(DetailedGameDTO::new).toList();
+    public Flux<DetailedGameDTO> getGameList() {
+        return Flux.fromIterable(games.values().stream()
+                .map(DetailedGameDTO::new).toList());
     }
 
     public Flux<ServerSentEvent<EventDTO>> subscribeToGameListUpdates() {

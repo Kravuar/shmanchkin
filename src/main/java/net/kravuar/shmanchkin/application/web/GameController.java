@@ -19,8 +19,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
-import java.util.Collection;
-
 @RestController
 @RequestMapping("/games")
 @RequiredArgsConstructor
@@ -36,7 +34,7 @@ public class GameController {
             @ApiResponse(responseCode = "200", description = "Список игр получен."),
     })
     @GetMapping
-    public Collection<DetailedGameDTO> gameList() {
+    public Flux<DetailedGameDTO> gameList() {
         return gameService.getGameList();
     }
 
