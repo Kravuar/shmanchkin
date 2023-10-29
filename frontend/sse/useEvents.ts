@@ -1,14 +1,29 @@
-import {DependencyList, useEffect} from "react";
+import {DependencyList, useEffect, useState} from "react";
 
-export const useEvents = (url: string, listeners: Record<string, (e: MessageEvent<string>) => void>, deps: DependencyList = []) => {
+export const useEvents = (url: string, handlers: Record<string, (e: MessageEvent<string>) => void>, deps: DependencyList = []) => {
+    const [source, setSource] = useState<EventSource | undefined>(undefined)
+
+    // при изменении url, закрываем соединение и создаем новое
     useEffect(() => {
-        const source = new EventSource(url)
-        Object.entries(listeners).forEach(([evt, cb]) => {
+        const source = new EventSource(url, {withCredentials: true})
+        setSource(source)
+        return () => {
+            source.close()
+            setSource(undefined)
+        }
+    }, [url])
+
+    // при изменении массива зависимостей обработчиков, отписываем все старые обработчики, подписываем новые
+    useEffect(() => {
+        if (!source) return
+        Object.entries(handlers).forEach(([evt, cb]) => {
             source.addEventListener(evt, cb)
         })
         return () => {
-            source.close()
-            // maybe detach all listeners...
+            if (!source) return
+            Object.entries(handlers).forEach(([evt, cb]) => {
+                source.removeEventListener(evt, cb)
+            })
         }
-    }, [url, ...deps])
+    }, [source, ...deps])
 }
