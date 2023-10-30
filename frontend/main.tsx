@@ -8,6 +8,7 @@ import './index.css'
 import {Games} from "@/routes/Games.tsx";
 import {CreateGame} from "@/routes/CreateGame.tsx";
 import {Game} from "@/routes/Game.tsx";
+import {Test} from "@/routes/Test.tsx";
 
 
 const queryClient = new QueryClient({
@@ -32,6 +33,10 @@ const router = createBrowserRouter([
     {
         path: "/games/:lobbyName/:username",
         element: <Game/>
+    },
+    {
+        path: "/test",
+        element: <Test/>
     }
 ])
 

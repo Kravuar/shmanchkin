@@ -1,6 +1,6 @@
 import {useParams} from "react-router-dom";
 import {useEvents} from "@/sse/useEvents.ts";
-import {useMemo, useState} from "react";
+import {useState} from "react";
 import {PaperAirplaneIcon} from "@heroicons/react/24/outline";
 import {useForm} from "react-hook-form";
 import {useMutation} from "@tanstack/react-query";
@@ -26,7 +26,7 @@ export const Game = () => {
     console.log(lobbyName, username)
     const [messages, setMessage] = useState<MessageEventData[]>([])
 
-    const listeners = useMemo(() => ({
+    useEvents(`/api/games/join/${lobbyName}/${username}`, {
         'player-message': (e: MessageEvent<string>) => {
             console.log('message', e.data)
             const message = JSON.parse(e.data) as MessageEventData
@@ -38,8 +38,7 @@ export const Game = () => {
         'players-full-update': (e: MessageEvent<string>) => {
             console.log('players update', e.data)
         }
-    }), [])
-    useEvents(`/api/games/join/${lobbyName}/${username}`, listeners)
+    }, [])
 
     const {reset, register, handleSubmit} = useForm<ChatFormValues>()
     const sendMessageMutation = useMutation({
