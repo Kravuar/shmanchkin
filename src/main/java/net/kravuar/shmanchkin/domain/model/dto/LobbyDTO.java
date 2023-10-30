@@ -8,11 +8,12 @@ import java.util.Collection;
 
 @Getter
 @Setter
-public class DetailedGameDTO extends GameDTO {
+public class LobbyDTO extends GameDTO {
     private PlayerDTO owner;
     private Collection<PlayerDTO> playersJoined;
+//
 
-    public DetailedGameDTO(Game game) {
+    public LobbyDTO(Game game) {
         super(game);
         this.owner = new PlayerDTO(game.getOwner());
         this.playersJoined = game.getPlayers().values().stream()

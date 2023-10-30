@@ -1,31 +1,41 @@
-package net.kravuar.shmanchkin.domain.model.game;
+package net.kravuar.shmanchkin.domain.model.account;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NonNull;
 import net.kravuar.shmanchkin.domain.model.dto.events.EventDTO;
 import net.kravuar.shmanchkin.domain.model.exceptions.UserIsIdleException;
+import net.kravuar.shmanchkin.domain.model.game.Character;
+import net.kravuar.shmanchkin.domain.model.game.Game;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
 import reactor.core.publisher.FluxSink;
 
+import java.util.UUID;
+
 @Getter
-@EqualsAndHashCode(of = {"game", "username"})
-public class Player {
+@EqualsAndHashCode(of = {"uuid", "game", "username"})
+public class UserInfo {
+    @Getter
+    private final UUID uuid;
+    @Getter
+    private String username;
+
     @Getter
     private Game game;
     private FluxSink<ServerSentEvent<EventDTO>> sink;
     private MessageHandler messageHandler;
 
-    private String username;
     private Character character; // TODO: Character field with stuff like level, hand, armor and so on.
 
-    public Player(String username) {
+    public UserInfo(@NonNull UUID uuid, @NonNull String username) {
+        this.uuid = uuid;
         this.username = username;
     }
 
-    public void setInfo(Game game, FluxSink<ServerSentEvent<EventDTO>> sink, MessageHandler messageHandler) {
+    public void setInfo(@NonNull Game game, FluxSink<ServerSentEvent<EventDTO>> sink, MessageHandler messageHandler) {
         this.game = game;
         this.sink = sink;
         this.messageHandler = messageHandler;

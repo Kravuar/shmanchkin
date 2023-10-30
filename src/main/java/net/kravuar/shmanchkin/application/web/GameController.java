@@ -5,19 +5,18 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import net.kravuar.shmanchkin.application.services.GameService;
-import net.kravuar.shmanchkin.domain.model.dto.DetailedGameDTO;
 import net.kravuar.shmanchkin.domain.model.dto.GameFormDTO;
+import net.kravuar.shmanchkin.domain.model.dto.LobbyDTO;
 import net.kravuar.shmanchkin.domain.model.dto.events.*;
-import net.kravuar.shmanchkin.domain.services.Username;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/games")
@@ -34,8 +33,8 @@ public class GameController {
             @ApiResponse(responseCode = "200", description = "Список игр получен."),
     })
     @GetMapping
-    public Flux<DetailedGameDTO> gameList() {
-        return gameService.getGameList();
+    public Flux<LobbyDTO> lobbyList() {
+        return gameService.getLobbyList();
     }
 
     @Operation(
@@ -58,8 +57,8 @@ public class GameController {
             )
     })
     @GetMapping("/subscribe")
-    public Flux<ServerSentEvent<EventDTO>> subscribeToGameListUpdates() {
-        return gameService.subscribeToGameListUpdates();
+    public Flux<ServerSentEvent<EventDTO>> subscribeToLobbyListUpdates() {
+        return gameService.subscribeToLobbyListUpdates();
     }
 
     @Operation(
@@ -71,8 +70,8 @@ public class GameController {
             @ApiResponse(responseCode = "400", description = "Невозможно создать игру. Пользователь уже в игре или имя игры уже занято."),
     })
     @PostMapping("/create")
-    public void createLobby(@RequestBody GameFormDTO gameForm) {
-        gameService.createGame(gameForm);
+    public Mono<Void> createLobby(@RequestBody GameFormDTO gameForm) {
+        return gameService.createGame(gameForm);
     }
 
 //    TODO: Переподключение
@@ -83,12 +82,12 @@ public class GameController {
             Подключение к лобби, с открытием SSE потока для игровых ивентов.
             Возможны следующие ивенты:
                 На всех стадиях:
-                    player-message
+                    userInfo-message
                     game-status-change
                 В стадии ожидания:
-                    player-connected/player-disconnected
-                    players-full-update
-                    player-kicked # Приходит только кикнутому игроку (вместе с остальными ивентами).
+                    userInfo-connected/userInfo-disconnected
+                    userInfos-full-update
+                    userInfo-kicked # Приходит только кикнутому игроку (вместе с остальными ивентами).
                 В стадии игры:
                     ...
             </pre>
@@ -106,9 +105,9 @@ public class GameController {
             ),
             @ApiResponse(responseCode = "400", description = "Невозможно подключиться к игре. Игра не найдена, либо пользователь уже в игре, либо игра заполнена, либо имя игрока уже занято, либо игра уже начата."),
     })
-    @GetMapping("/join/{lobbyName}/{username}")
-    public Flux<ServerSentEvent<EventDTO>> joinLobby(@PathVariable String lobbyName, @PathVariable @Valid @Username String username) {
-        return gameService.joinGame(lobbyName, username);
+    @GetMapping("/join/{lobbyName}")
+    public Flux<ServerSentEvent<EventDTO>> joinLobby(@PathVariable String lobbyName) {
+        return gameService.joinGame(lobbyName);
     }
 
     @Operation(
@@ -121,8 +120,8 @@ public class GameController {
             @ApiResponse(responseCode = "403", description = "Невозможно запустить игру. Пользователь не хост.")
     })
     @DeleteMapping("/close")
-    public void closeLobby() {
-        gameService.closeGame();
+    public Mono<Void> closeGame() {
+        return gameService.closeGame();
     }
 
     @Operation(
@@ -135,8 +134,8 @@ public class GameController {
             @ApiResponse(responseCode = "403", description = "Невозможно запустить игру. Пользователь не хост."),
     })
     @PutMapping("/start")
-    public void startGame() {
-        gameService.startGame();
+    public Mono<Void> startGame() {
+        return gameService.startGame();
     }
 
     @Operation(
@@ -148,8 +147,8 @@ public class GameController {
             @ApiResponse(responseCode = "400", description = "Пользователь не в игре или пустое сообщение."),
     })
     @PostMapping("/sendMessage")
-    public void sendMessage(@RequestBody @NotBlank @Length(min = 1) String message) {
-        gameService.sendMessage(message);
+    public Mono<Void> sendMessage(@RequestBody @NotBlank @Length(min = 1) String message) {
+        return gameService.sendMessage(message);
     }
 
     @Operation(
@@ -162,8 +161,8 @@ public class GameController {
             @ApiResponse(responseCode = "403", description = "Пользователь не хост."),
     })
     @PutMapping("/kickPlayer")
-    public void kickPlayer(String username) {
-        gameService.kickPlayer(username);
+    public Mono<Void> kickPlayer(String username) {
+        return gameService.kickPlayer(username);
     }
 
     @Operation(
@@ -174,7 +173,20 @@ public class GameController {
             @ApiResponse(responseCode = "200", description = "Игра покинута."),
     })
     @PutMapping("/leave")
-    public void leave() {
-        gameService.leaveGame();
+    public Mono<Void> leave() {
+        return gameService.leaveGame();
+    }
+
+    @Operation(
+            summary = "Получить информацию о лобби.",
+            description = "Основная информация о лобби."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Информация получена."),
+            @ApiResponse(responseCode = "400", description = "Не в игре."),
+    })
+    @GetMapping("/info")
+    public Mono<LobbyDTO> getLobbyInfo() {
+        return gameService.getLobbyInfo();
     }
 }

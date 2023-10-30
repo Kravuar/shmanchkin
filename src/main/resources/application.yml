@@ -1,10 +1,22 @@
 web:
+  jwt:
+    publicKeyFile: classpath:public.key
+    privateKeyFile: classpath:private.key
+    issuer: shmanchkin
+    access-token-expiration: 69420
+    refresh-cookie-path: "/api/auth/refresh"
   allowed-origins:
     - http://localhost:3000
+  unauthenticated-endpoints:
+    - "/api/games/"
+    - "/api/games/subscribe"
+    - "/api/auth/signIn"
+    - "/api/swagger-ui.html"
 
 server:
   http2:
     enabled: true
+
 spring:
   webflux:
     base-path: /api

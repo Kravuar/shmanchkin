@@ -2,8 +2,8 @@ package net.kravuar.shmanchkin.domain.model.dto.events;
 
 import lombok.Getter;
 import lombok.Setter;
+import net.kravuar.shmanchkin.domain.model.account.UserInfo;
 import net.kravuar.shmanchkin.domain.model.dto.PlayerDTO;
-import net.kravuar.shmanchkin.domain.model.game.Player;
 
 import java.time.ZonedDateTime;
 
@@ -14,7 +14,7 @@ public class MessageDTO extends EventDTO {
     private ZonedDateTime when;
     private PlayerDTO sender;
 
-    public MessageDTO(Player sender, String message) {
+    public MessageDTO(UserInfo sender, String message) {
         super("player-message");
         this.message = message;
         this.when = ZonedDateTime.now();

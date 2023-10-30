@@ -6,6 +6,7 @@ import net.kravuar.shmanchkin.domain.model.exceptions.ForbiddenActionException;
 import net.kravuar.shmanchkin.domain.model.exceptions.GameException;
 import net.kravuar.shmanchkin.domain.model.exceptions.UserIsIdleException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -18,6 +19,12 @@ public class GameExceptionHandler {
     @ExceptionHandler(ForbiddenActionException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public String gameExceptionHandler(ForbiddenActionException exception) {
+        return exception.getMessage();
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public String gameExceptionHandler(AccessDeniedException exception) {
         return exception.getMessage();
     }
 
@@ -46,6 +53,12 @@ public class GameExceptionHandler {
     @ExceptionHandler(GameException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String gameExceptionHandler(GameException exception) {
+        return exception.getMessage();
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public String otherExceptionHandler(Exception exception) {
         return exception.getMessage();
     }
 }
