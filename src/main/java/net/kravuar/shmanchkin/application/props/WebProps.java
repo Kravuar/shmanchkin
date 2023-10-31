@@ -10,5 +10,5 @@ import java.util.List;
 @Data
 public class WebProps {
     private List<String> allowedOrigins = new ArrayList<>();
-    private List<String> unauthenticatedEndpoints = new ArrayList<>();
+    private List<String> unauthenticatedPathMatchers = new ArrayList<>();
 }

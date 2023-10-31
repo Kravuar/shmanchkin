@@ -4,14 +4,16 @@ web:
     privateKeyFile: classpath:private.key
     issuer: shmanchkin
     access-token-expiration: 69420
-    refresh-cookie-path: "/api/auth/refresh"
+    refresh-cookie-path: "/api/auth/refresh" # Explicit full path
   allowed-origins:
     - http://localhost:3000
-  unauthenticated-endpoints:
-    - "/api/games/"
-    - "/api/games/subscribe"
-    - "/api/auth/signIn"
-    - "/api/swagger-ui.html"
+  unauthenticated-path-matchers:
+    - "/games"
+    - "/games/subscribe"
+    - "/auth/signIn"
+    - "/swagger-ui.html"        # openapi
+    - "/webjars/swagger-ui/**"  # openapi
+    - "/v3/api-docs/**"         # openapi
 
 server:
   http2:

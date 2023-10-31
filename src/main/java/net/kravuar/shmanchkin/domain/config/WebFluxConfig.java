@@ -40,13 +40,13 @@ public class WebFluxConfig {
 
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http, JWTAuthFilter jwtAuthFilter) {
-        http.authorizeExchange(config -> {
-//            TODO: that thing is fucked up for some reason
-//            config.pathMatchers(webProps.getUnauthenticatedEndpoints().toArray(String[]::new))
-//                    .permitAll();
-//            config.anyExchange().authenticated();
-            config.anyExchange().permitAll();
-        });
+        http.authorizeExchange(config ->
+            config
+                    .pathMatchers(webProps.getUnauthenticatedPathMatchers().toArray(String[]::new))
+                        .permitAll()
+                    .anyExchange()
+                        .authenticated()
+        );
         http.csrf(ServerHttpSecurity.CsrfSpec::disable);
         http.addFilterBefore(jwtAuthFilter, SecurityWebFiltersOrder.AUTHENTICATION);
         return http.build();
@@ -55,7 +55,7 @@ public class WebFluxConfig {
     @Bean
     public JWTAuthFilter jwtAuthFilter(JWTExtractor jwtExtractor, PrincipalExtractor principalExtractor, JWTUtils jwtUtils) {
         return new JWTAuthFilter(jwtExtractor, jwtProps.getAccessCookieName(), principalExtractor, jwtUtils, jwtProps.getAuthoritiesClaimName(), new OrServerWebExchangeMatcher(
-                webProps.getUnauthenticatedEndpoints().stream()
+                webProps.getUnauthenticatedPathMatchers().stream()
                         .map(PathPatternParserServerWebExchangeMatcher::new)
                         .map(ServerWebExchangeMatcher.class::cast)
                         .toList()

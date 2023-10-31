@@ -1,5 +1,6 @@
 package net.kravuar.shmanchkin.application.web.exception;
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import net.kravuar.shmanchkin.domain.model.exceptions.ForbiddenActionException;
@@ -25,6 +26,12 @@ public class GameExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public String gameExceptionHandler(AccessDeniedException exception) {
+        return exception.getMessage();
+    }
+
+    @ExceptionHandler(JWTVerificationException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public String jwtExceptionHandler(JWTVerificationException exception) {
         return exception.getMessage();
     }
 
