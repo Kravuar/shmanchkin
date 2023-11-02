@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Setter
 public class JWTProps {
     private String tokenPrefix = "Bearer_";
-    private long accessTokenExpiration = 4000;
+    private long accessTokenExpiration = 40000;
     private long refreshTokenExpiration = 43200;
     private String issuer = "shmanchkin";
     private String authoritiesClaimName = "authorities";
