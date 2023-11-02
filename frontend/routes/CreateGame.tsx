@@ -1,13 +1,18 @@
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {api} from "@/api.ts";
 import {useForm} from "react-hook-form";
-import {Link} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import {RedButton, YellowButton} from "@/components/Button.tsx";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import tw from "twin.macro";
+import {AxiosError} from "axios";
+import {Input} from "@/components/Input.tsx";
+import {ErrorText} from "@/components/Typography.tsx";
+import {useState} from "react";
+import {IdentifyModal} from "@/widgets/IdentifyModal.tsx";
 
 type FormValues = {
     lobbyName: string
@@ -16,12 +21,25 @@ type FormValues = {
 // TODO: добавить перенаправление в созданное лобби
 //  при успехе и вывод ошибки при неудаче
 export const CreateGame = () => {
+    const navigate = useNavigate()
+    const [authModalOpen, setAuthModalOpen] = useState(false)
+
     const {register, handleSubmit} = useForm<FormValues>()
     const client = useQueryClient()
     const createGameMutation = useMutation({
         mutationFn: (data: FormValues) => api.post("/games/create", data),
         onSettled: () => {
             client.invalidateQueries({queryKey: ["games"]})
+        },
+        onError: error => {
+            if (error instanceof AxiosError) {
+                if (error.response?.status === 401) {
+                    setAuthModalOpen(true)
+                }
+            }
+        },
+        onSuccess: (_, {lobbyName}) => {
+            navigate(`/games/${lobbyName}`)
         }
     })
     return (
@@ -32,8 +50,7 @@ export const CreateGame = () => {
                 <h1 tw={'text-4xl font-bold'}>
                     Создание лобби
                 </h1>
-                <input type={'text'} placeholder={'Название лобби'}
-                       tw={'w-full text-center px-6 py-6 border-4 bg-stone-700 border-solid border-stone-900 rounded-3xl placeholder:tracking-[8.64px] text-2xl'}
+                <Input type={'text'} placeholder={'Название лобби'}
                        {...register('lobbyName')}
                 />
                 <div tw={'w-full flex justify-between'}>
@@ -44,6 +61,10 @@ export const CreateGame = () => {
                         Создать
                     </YellowButton>
                 </div>
+                <ErrorText>
+                    {createGameMutation.error?.message}
+                </ErrorText>
+                <IdentifyModal open={authModalOpen} onClose={() => setAuthModalOpen(false)}/>
             </form>
         </div>
     )
