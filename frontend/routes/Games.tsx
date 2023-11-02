@@ -2,6 +2,7 @@ import {ArrowLeftIcon, ArrowPathIcon} from "@heroicons/react/24/outline";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {api} from "@/api";
 import {useEvents} from "@/sse/useEvents.ts";
+import {Link} from "react-router-dom";
 
 type Game = {
     lobbyName: string,
@@ -45,10 +46,10 @@ export const Games = () => {
                 filter: "drop-shadow(0px 0px 110px #1C1917)"
             }}
                  className={'mx-auto max-w-[909px] rounded-[36px] bg-stone-700 text-[20px] pt-6 text-center'}>
-                <div className={'flex px-12 pb-4 justify-between'}>
-                    <button onClick={() => console.log('go back')}>
+                <div className={'flex px-12 pb-4 justify-between items-center'}>
+                    <Link to={'/'}>
                         <ArrowLeftIcon className={'w-8 h-8 stroke-[3px]'}/>
-                    </button>
+                    </Link>
                     <h1 className={'text-[32px] font-bold'}>
                         Список серверов {games ? `(${games.length})` : null}
                     </h1>
