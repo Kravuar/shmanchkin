@@ -10,6 +10,7 @@ import {CreateGame} from "@/routes/CreateGame.tsx";
 import {Game} from "@/routes/Game.tsx";
 import {Test} from "@/routes/Test.tsx";
 import {Main} from "@/routes/Main.tsx";
+import {PlayerInfoBlock} from "@/widgets/PlayerInfoBlock.tsx";
 
 
 const queryClient = new QueryClient({
@@ -48,6 +49,7 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <QueryClientProvider client={queryClient}>
+            <PlayerInfoBlock/>
             <RouterProvider router={router}/>
             <ReactQueryDevtools initialIsOpen={false}/>
         </QueryClientProvider>

@@ -10,5 +10,5 @@ export type Game = {
 }
 
 export type PlayerInfo = Player & {
-    currentGame: Game
+    currentGame?: Game
 }
