@@ -1,5 +1,6 @@
 package net.kravuar.shmanchkin.application.services;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.kravuar.shmanchkin.domain.model.account.UserInfo;
 import net.kravuar.shmanchkin.domain.model.dto.GameFormDTO;
@@ -16,8 +17,6 @@ import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
@@ -26,11 +25,13 @@ import reactor.core.publisher.Mono;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @RequiredArgsConstructor
 @Service
 public class GameService {
+    private final UserService userService;
     private final Map<String, Game> games = new ConcurrentHashMap<>();
     private final SubscribableChannel gameListChannel = MessageChannels.publishSubscribe().getObject();
 
@@ -59,7 +60,7 @@ public class GameService {
     }
 
     public Mono<Void> createGame(GameFormDTO gameForm) {
-        return getCurrentUser()
+        return userService.getCurrentUser()
                 .flatMap(currentUser -> {
                     if (!currentUser.isIdle())
                         return Mono.error(new AlreadyInGameException(currentUser.getGame().getLobbyName()));
@@ -85,7 +86,7 @@ public class GameService {
     }
 
     public synchronized Flux<ServerSentEvent<EventDTO>> joinGame(String lobbyName) {
-        return getCurrentUser()
+        return userService.getCurrentUser()
                 .flatMapMany(currentUser -> {
                     if (!currentUser.isIdle())
                         return Flux.error(new AlreadyInGameException(currentUser.getGame().getLobbyName()));
@@ -117,7 +118,7 @@ public class GameService {
     }
 
     public Mono<Void> leaveGame() {
-        return getCurrentUser()
+        return userService.getCurrentUser()
                 .flatMap(currentUser -> {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
@@ -128,7 +129,7 @@ public class GameService {
     }
 
     public Mono<Void> kickPlayer(String username) {
-        return getCurrentUser()
+        return userService.getCurrentUser()
                 .flatMap(currentUser -> {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
@@ -144,7 +145,7 @@ public class GameService {
     }
 
     public Mono<Void> startGame() {
-        return getCurrentUser()
+        return userService.getCurrentUser()
                 .flatMap(currentUser -> {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
@@ -157,7 +158,7 @@ public class GameService {
     }
 
     public Mono<Void> closeGame() {
-        return getCurrentUser()
+        return userService.getCurrentUser()
                 .flatMap(currentUser -> {
                     if (currentUser.getGame() == null)
                         return Mono.error(new UserIsIdleException("Нет созданной игры."));
@@ -173,7 +174,7 @@ public class GameService {
     }
 
     public Mono<Void> sendMessage(String message) {
-        return getCurrentUser()
+        return userService.getCurrentUser()
                 .flatMap(currentUser -> {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
@@ -185,7 +186,7 @@ public class GameService {
     }
 
     public Mono<LobbyDTO> getLobbyInfo() {
-        return getCurrentUser()
+        return userService.getCurrentUser()
                 .flatMap(currentUser -> {
                     var game = currentUser.getGame();
                     if (game == null)
@@ -194,9 +195,17 @@ public class GameService {
                 });
     }
 
-    public Mono<UserInfo> getCurrentUser() {
-        return ReactiveSecurityContextHolder.getContext()
-                .switchIfEmpty(Mono.error(new AccessDeniedException("Пользователь не авторизован.")))
-                .map(securityContext -> (UserInfo) securityContext.getAuthentication().getPrincipal());
+    public UserInfo getActiveUser(@NonNull UUID uuid) {
+        UserInfo user = null;
+        for (var game: getGames().values()) {
+            if (game.getOwner().getUuid().equals(uuid)) {
+                user = game.getOwner();
+                break;
+            }
+            user = game.getPlayer(uuid);
+            if (user != null)
+                break;
+        }
+        return user;
     }
 }

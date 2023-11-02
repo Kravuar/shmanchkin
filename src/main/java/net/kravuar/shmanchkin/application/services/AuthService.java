@@ -15,6 +15,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+    public static final String UUID_CLAIM = "uuid";
     private final JWTUtils jwtUtils;
     private final JWTProps jwtProps;
     private final JWTExtractor jwtExtractor;
@@ -30,7 +31,7 @@ public class AuthService {
                 jwtExtractor.extract(request, jwtProps.getRefreshCookieName())
         );
         return getLoggedUser(new UserPrincipal(
-                UUID.fromString(decodedJWT.getClaim("uuid").asString()),
+                UUID.fromString(decodedJWT.getClaim(AuthService.UUID_CLAIM).asString()),
                 decodedJWT.getSubject()
         ));
     }
@@ -41,14 +42,14 @@ public class AuthService {
                         userInfo.getUsername(),
                         Collections.emptyList(),
                         jwtProps.getAccessTokenExpiration()
-                ).withClaim("uuid", userInfo.getUuid().toString())
+                ).withClaim(AuthService.UUID_CLAIM, userInfo.getUuid().toString())
         );
         var refreshToken = jwtUtils.sign(
                 jwtUtils.getJWTBuilder(
                         userInfo.getUsername(),
                         Collections.emptyList(),
                         jwtProps.getRefreshTokenExpiration()
-                ).withClaim("uuid", userInfo.getUuid().toString())
+                ).withClaim(AuthService.UUID_CLAIM, userInfo.getUuid().toString())
         );
 
         return new LoggedUser(

@@ -1,6 +1,7 @@
 package net.kravuar.shmanchkin.domain.model.dto;
 
 import lombok.Data;
+import net.kravuar.shmanchkin.domain.model.account.UserInfo;
 import net.kravuar.shmanchkin.domain.model.account.UserPrincipal;
 
 import java.util.UUID;
@@ -13,5 +14,10 @@ public class UserDTO {
     public UserDTO(UserPrincipal userPrincipal) {
         this.uuid = userPrincipal.getUuid();
         this.username = userPrincipal.getUsername();
+    }
+
+    public UserDTO(UserInfo userInfo) {
+        this.uuid = userInfo.getUuid();
+        this.username = userInfo.getUsername();
     }
 }

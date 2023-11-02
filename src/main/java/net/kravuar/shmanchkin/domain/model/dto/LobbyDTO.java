@@ -9,15 +9,14 @@ import java.util.Collection;
 @Getter
 @Setter
 public class LobbyDTO extends GameDTO {
-    private PlayerDTO owner;
-    private Collection<PlayerDTO> playersJoined;
-//
+    private UserDTO owner;
+    private Collection<UserDTO> playersJoined;
 
     public LobbyDTO(Game game) {
         super(game);
-        this.owner = new PlayerDTO(game.getOwner());
+        this.owner = new UserDTO(game.getOwner());
         this.playersJoined = game.getPlayers().values().stream()
-                .map(PlayerDTO::new)
+                .map(UserDTO::new)
                 .toList();
     }
 }

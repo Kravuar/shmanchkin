@@ -1,28 +1,24 @@
 package net.kravuar.shmanchkin.application.services;
 
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.kravuar.shmanchkin.domain.model.account.UserInfo;
+import net.kravuar.shmanchkin.domain.model.dto.DetailedUserDTO;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Service;
-
-import java.util.UUID;
+import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    private final GameService gameService;
 
-    public UserInfo getActiveUser(@NonNull UUID uuid) {
-        UserInfo user = null;
-        for (var game: gameService.getGames().values()) {
-            if (game.getOwner().getUuid().equals(uuid)) {
-                user = game.getOwner();
-                break;
-            }
-            user = game.getPlayer(uuid);
-            if (user != null)
-                break;
-        }
-        return user;
+    public Mono<UserInfo> getCurrentUser() {
+        return ReactiveSecurityContextHolder.getContext()
+                .switchIfEmpty(Mono.error(new AccessDeniedException("Пользователь не авторизован.")))
+                .map(securityContext -> (UserInfo) securityContext.getAuthentication().getPrincipal());
+    }
+
+    public Mono<DetailedUserDTO> getFullCurrentUser() {
+        return getCurrentUser().map(DetailedUserDTO::new);
     }
 }
