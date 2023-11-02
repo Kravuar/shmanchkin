@@ -1,6 +1,7 @@
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {api} from "@/api.ts";
 import {useForm} from "react-hook-form";
+import {Link} from "react-router-dom";
 
 type FormValues = {
     lobbyName: string
@@ -35,9 +36,9 @@ export const CreateGame = () => {
                        {...register('ownerName')}
                 />
                 <div className={'w-full flex justify-between'}>
-                    <button type={'button'} className={'font-bold border-4 border-solid border-stone-900 text-white bg-red-500 px-[70px] py-6 rounded-3xl text-xl'}>
+                    <Link to={'/'} role={'button'} className={'font-bold border-4 border-solid border-stone-900 text-white bg-red-500 px-[70px] py-6 rounded-3xl text-xl'}>
                         Отмена
-                    </button>
+                    </Link>
                     <button type={'submit'} className={'font-bold border-4 border-solid border-stone-900 text-black bg-amber-300 px-[70px] py-6 rounded-3xl text-xl'}>
                         Создать
                     </button>
