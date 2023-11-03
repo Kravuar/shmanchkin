@@ -26,14 +26,44 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 
 @RequiredArgsConstructor
 @Service
 public class GameService {
     private final UserService userService;
+    private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
     private final Map<String, Game> games = new ConcurrentHashMap<>();
+    private final Map<String, ScheduledFuture<?>> autoCloseTasks = new ConcurrentHashMap<>();
     private final SubscribableChannel gameListChannel = MessageChannels.publishSubscribe().getObject();
+
+    private void autoClose(String lobbyName) {
+        var game = games.get(lobbyName);
+        if (game == null)
+            return;
+        if (!game.getPlayers().isEmpty())
+            return;
+        game.close();
+        games.remove(lobbyName);
+        gameListChannel.send(new GenericMessage<>(new GameListUpdateDTO(game, GameListUpdateAction.CLOSED)));
+        gameListChannel.send(new GenericMessage<>(new GameListFullUpdateDTO(games.values())));
+        autoCloseTasks.remove(lobbyName);
+    }
+
+    private void scheduleAutoClose(String lobbyName) {
+        var autoCloseTask = executorService.schedule(
+                () -> autoClose(lobbyName),
+                30,
+                TimeUnit.SECONDS
+        );
+        autoCloseTasks.put(lobbyName, autoCloseTask);
+    }
+
+    private void cancelAutoClose(String lobbyName) {
+        var task = autoCloseTasks.get(lobbyName);
+        if (task != null)
+            task.cancel(false);
+    }
 
     public Flux<LobbyDTO> getLobbyList() {
         return Flux.fromIterable(games.values().stream()
@@ -81,6 +111,7 @@ public class GameService {
                     );
                     gameListChannel.send(new GenericMessage<>(new GameListUpdateDTO(game, GameListUpdateAction.CREATED)));
                     gameListChannel.send(new GenericMessage<>(new GameListFullUpdateDTO(this.games.values())));
+                    scheduleAutoClose(game.getLobbyName());
                     return Mono.empty();
                 });
     }
@@ -107,6 +138,7 @@ public class GameService {
                         try {
                             currentUser.setInfo(game, sink, handler);
                             game.addPlayer(currentUser);
+                            cancelAutoClose(lobbyName);
                             sink.onDispose(() -> game.removePlayer(currentUser));
                         } catch (Exception joinFailedException) {
                             sink.error(joinFailedException);
@@ -124,6 +156,8 @@ public class GameService {
                         return Mono.error(new UserIsIdleException());
                     var game = currentUser.getGame();
                     game.removePlayer(currentUser);
+                    if (game.getPlayers().isEmpty())
+                        scheduleAutoClose(game.getLobbyName());
                     return Mono.empty();
                 });
     }
@@ -140,6 +174,8 @@ public class GameService {
                     if (player == null)
                         return Mono.error(new PlayerNotFoundException(game.getLobbyName(), username));
                     game.removePlayer(player);
+                    if (game.getPlayers().isEmpty())
+                        scheduleAutoClose(game.getLobbyName());
                     return Mono.empty();
                 });
     }
