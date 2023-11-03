@@ -1,48 +1,75 @@
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {api} from "@/api.ts";
 import {useForm} from "react-hook-form";
+import {Link, useNavigate} from "react-router-dom";
+import {RedButton, YellowButton} from "@/components/Button.tsx";
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import tw from "twin.macro";
+import {AxiosError} from "axios";
+import {Input} from "@/components/Input.tsx";
+import {ErrorText} from "@/components/Typography.tsx";
+import {useState} from "react";
+import {IdentifyModal} from "@/widgets/IdentifyModal.tsx";
 
 type FormValues = {
     lobbyName: string
-    ownerName: string
 }
 
 // TODO: добавить перенаправление в созданное лобби
 //  при успехе и вывод ошибки при неудаче
 export const CreateGame = () => {
+    const navigate = useNavigate()
+    const [authModalOpen, setAuthModalOpen] = useState(false)
+
     const {register, handleSubmit} = useForm<FormValues>()
     const client = useQueryClient()
     const createGameMutation = useMutation({
         mutationFn: (data: FormValues) => api.post("/games/create", data),
         onSettled: () => {
             client.invalidateQueries({queryKey: ["games"]})
+        },
+        onError: error => {
+            if (error instanceof AxiosError) {
+                if (error.response?.status === 401) {
+                    setAuthModalOpen(true)
+                }
+            }
+        },
+        onSuccess: (_, {lobbyName}) => {
+            navigate(`/games/${lobbyName}`)
         }
     })
     return (
-        <div className={'text-white bg-stone-800 w-full min-h-screen pt-[50px] flex place-items-center'}>
+        <div tw={'text-white bg-stone-800 w-full min-h-screen pt-[50px] flex place-items-center'}>
             <form onSubmit={handleSubmit(data => {
                 createGameMutation.mutate(data)
-            })} className={'mx-auto w-[558px] flex flex-col items-center gap-6'}>
-                <h1 className={'text-4xl font-bold'}>
+            })} tw={'mx-auto w-[558px] flex flex-col items-center gap-6'}>
+                <h1 tw={'text-4xl font-bold'}>
                     Создание лобби
                 </h1>
-                <input type={'text'} placeholder={'Название лобби'}
-                       className={'w-full text-center px-6 py-6 border-4 bg-stone-700 border-solid border-stone-900 rounded-3xl placeholder:tracking-[8.64px] text-2xl'}
+                <Input type={'text'} placeholder={'Название лобби'}
                        {...register('lobbyName')}
                 />
-                <input type={'text'} placeholder={'Ваш никнейм'}
-                       className={'w-full text-center px-6 py-6 border-4 bg-stone-700 border-solid border-stone-900 rounded-3xl placeholder:tracking-[8.64px] text-2xl'}
-                       {...register('ownerName')}
-                />
-                <div className={'w-full flex justify-between'}>
-                    <button type={'button'} className={'font-bold border-4 border-solid border-stone-900 text-white bg-red-500 px-[70px] py-6 rounded-3xl text-xl'}>
+                <div tw={'w-full flex justify-between'}>
+                    <RedLink to={'/'} role={'button'}>
                         Отмена
-                    </button>
-                    <button type={'submit'} className={'font-bold border-4 border-solid border-stone-900 text-black bg-amber-300 px-[70px] py-6 rounded-3xl text-xl'}>
+                    </RedLink>
+                    <YellowButton type={'submit'}>
                         Создать
-                    </button>
+                    </YellowButton>
                 </div>
+                <ErrorText>
+                    {createGameMutation.error?.message}
+                </ErrorText>
+                <IdentifyModal open={authModalOpen} onClose={() => setAuthModalOpen(false)}/>
             </form>
         </div>
     )
 }
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+const RedLink = RedButton.withComponent(Link)

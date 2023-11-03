@@ -24,7 +24,8 @@
     "paths": {
       "@/*": ["frontend/*"],
       "assets/*": ["assets/*"],
-    }
+    },
+    "jsxImportSource": "@emotion/react"
   },
   "include": ["frontend"],
   "references": [{ "path": "./tsconfig.node.json" }]
