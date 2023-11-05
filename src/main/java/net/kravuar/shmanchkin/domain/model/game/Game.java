@@ -74,10 +74,6 @@ public class Game {
             removed.send(new KickedDTO());
             userInfo.unsubscribe(channel);
             userInfo.toIdle();
-
-//            Since reconnect is not a thing, yeah.
-            if (removed == owner)
-                close();
         }
     }
 
