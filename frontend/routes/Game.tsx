@@ -1,12 +1,14 @@
 import {useParams} from "react-router-dom";
 import {useEvents} from "@/sse/useEvents.ts";
-import {useEffect, useRef, useState} from "react";
+import {useRef, useState} from "react";
 import {PaperAirplaneIcon} from "@heroicons/react/24/outline";
 import {useForm} from "react-hook-form";
 import {useMutation} from "@tanstack/react-query";
 import {api} from "@/api.ts";
 import {Player} from "@/types/domain.tsx";
 import useResizeObserver from "use-resize-observer";
+import {useAlertStore} from "@/alert/useAlert.tsx";
+import {nanoid} from "nanoid";
 
 type ChatFormValues = {
     message: string
@@ -24,6 +26,7 @@ type PlayersFullUpdateEventData = {
 
 // TODO: прокрутка до последнего сообщеия
 export const Game = () => {
+    const pushAlert = useAlertStore(state => state.push)
     const {lobbyName} = useParams()
     const [messages, setMessage] = useState<MessageEventData[]>([])
     console.log('messages', messages)
@@ -44,6 +47,14 @@ export const Game = () => {
             console.log('players update', e.data)
             const data = JSON.parse(e.data) as PlayersFullUpdateEventData
             setPlayers(data.players)
+        },
+        'error': (e: Event) => {
+            pushAlert({
+                id: nanoid(),
+                type: "error",
+                header: "Ошибка " + e.type,
+                message: JSON.stringify(e)
+            })
         }
     }, [])
 

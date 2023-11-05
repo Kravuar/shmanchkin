@@ -51,7 +51,7 @@ export const useAlertStore = create<AlertState>()(set => ({
     push: (alert) => set(state => {
         setTimeout(() => {
             state.remove(alert.id)
-        }, 1000)
+        }, 2000)
         return {alerts: [...state.alerts, alert]}
     }),
     // from start

@@ -10,9 +10,10 @@ import {RedButton, YellowButton} from "@/components/Button.tsx";
 import tw from "twin.macro";
 import {AxiosError} from "axios";
 import {Input} from "@/components/Input.tsx";
-import {ErrorText} from "@/components/Typography.tsx";
 import {useState} from "react";
 import {IdentifyModal} from "@/widgets/IdentifyModal.tsx";
+import {useAlertStore} from "@/alert/useAlert.tsx";
+import {nanoid} from "nanoid";
 
 type FormValues = {
     lobbyName: string
@@ -21,6 +22,7 @@ type FormValues = {
 // TODO: добавить перенаправление в созданное лобби
 //  при успехе и вывод ошибки при неудаче
 export const CreateGame = () => {
+    const pushAlert = useAlertStore(state => state.push)
     const navigate = useNavigate()
     const [authModalOpen, setAuthModalOpen] = useState(false)
 
@@ -33,12 +35,24 @@ export const CreateGame = () => {
         },
         onError: error => {
             if (error instanceof AxiosError) {
+                pushAlert({
+                    id: nanoid(),
+                    type: "error",
+                    header: "Ошибка " + error.response?.status,
+                    message: error.response?.data ?? "Неизвестная ошибка"
+                })
                 if (error.response?.status === 401) {
                     setAuthModalOpen(true)
                 }
             }
         },
         onSuccess: (_, {lobbyName}) => {
+            pushAlert({
+                id: nanoid(),
+                type: "success",
+                header: "Успех",
+                message: "Игры успешно создана"
+            })
             navigate(`/games/${lobbyName}`)
         }
     })
@@ -61,9 +75,6 @@ export const CreateGame = () => {
                         Создать
                     </YellowButton>
                 </div>
-                <ErrorText>
-                    {createGameMutation.error?.message}
-                </ErrorText>
                 <IdentifyModal open={authModalOpen} onClose={() => setAuthModalOpen(false)}/>
             </form>
         </div>

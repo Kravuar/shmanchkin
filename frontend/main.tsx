@@ -11,6 +11,7 @@ import {Game} from "@/routes/Game.tsx";
 import {Test} from "@/routes/Test.tsx";
 import {Main} from "@/routes/Main.tsx";
 import {PlayerInfoBlock} from "@/widgets/PlayerInfoBlock.tsx";
+import {AlertProvider} from "@/alert/AlertProvider.tsx";
 
 
 const queryClient = new QueryClient({
@@ -50,8 +51,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <QueryClientProvider client={queryClient}>
             <PlayerInfoBlock/>
+            {/*<AlertTester/>*/}
+            <AlertProvider/>
             <RouterProvider router={router}/>
-            <ReactQueryDevtools initialIsOpen={false}/>
+            <ReactQueryDevtools buttonPosition={'bottom-left'} initialIsOpen={false}/>
         </QueryClientProvider>
     </React.StrictMode>,
 )
