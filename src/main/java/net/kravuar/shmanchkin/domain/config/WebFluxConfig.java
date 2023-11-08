@@ -17,7 +17,6 @@ import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.HttpBasicServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.util.matcher.OrServerWebExchangeMatcher;
 import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
@@ -56,9 +55,7 @@ public class WebFluxConfig {
         );
         http.csrf(ServerHttpSecurity.CsrfSpec::disable);
         http.addFilterBefore(jwtAuthFilter, SecurityWebFiltersOrder.AUTHENTICATION);
-        http.formLogin(ServerHttpSecurity.FormLoginSpec::disable);
-        http.httpBasic(ServerHttpSecurity.HttpBasicSpec::disable);
-        http.exceptionHandling(config -> config.authenticationEntryPoint(new HttpBasicServerAuthenticationEntryPoint() {
+        http.httpBasic(config -> config.authenticationEntryPoint(new HttpBasicServerAuthenticationEntryPoint() {
             @Override
             public Mono<Void> commence(ServerWebExchange exchange, AuthenticationException ex) {
                 return Mono.fromRunnable(() -> {
