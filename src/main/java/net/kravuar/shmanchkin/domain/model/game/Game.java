@@ -22,12 +22,13 @@ public class Game {
     public Game(@Length(min = 3, max = 30) String lobbyName, UserInfo owner) {
         this.lobbyName = lobbyName;
         this.owner = owner;
+        this.channel = MessageChannels.publishSubscribe(lobbyName).getObject();
     }
 
     public static final int MinPlayers = 4;
     public static final int MaxPlayers = 6;
     private final Map<String, UserInfo> playersJoined = new HashMap<>();
-    private final SubscribableChannel channel = MessageChannels.publishSubscribe().getObject();
+    private final SubscribableChannel channel;
     @Getter
     private final String lobbyName;
     @Getter

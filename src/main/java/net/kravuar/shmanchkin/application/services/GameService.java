@@ -35,7 +35,7 @@ public class GameService {
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
     private final Map<String, Game> games = new ConcurrentHashMap<>();
     private final Map<String, ScheduledFuture<?>> autoCloseTasks = new ConcurrentHashMap<>();
-    private final SubscribableChannel gameListChannel = MessageChannels.publishSubscribe().getObject();
+    private final SubscribableChannel gameListChannel = MessageChannels.publishSubscribe("GameList").getObject();
 
     private void autoClose(String lobbyName) {
         var game = games.get(lobbyName);
@@ -139,7 +139,11 @@ public class GameService {
                             currentUser.setInfo(game, sink, handler);
                             game.addPlayer(currentUser);
                             cancelAutoClose(lobbyName);
-                            sink.onDispose(() -> game.removePlayer(currentUser));
+                            sink.onDispose(() -> {
+                                game.removePlayer(currentUser);
+                                if (game.getPlayers().isEmpty())
+                                    scheduleAutoClose(game.getLobbyName());
+                            });
                         } catch (Exception joinFailedException) {
                             sink.error(joinFailedException);
                             sink.complete();
