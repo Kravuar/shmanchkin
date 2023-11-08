@@ -49,6 +49,8 @@ public class WebFluxConfig {
         );
         http.csrf(ServerHttpSecurity.CsrfSpec::disable);
         http.addFilterBefore(jwtAuthFilter, SecurityWebFiltersOrder.AUTHENTICATION);
+        http.formLogin(ServerHttpSecurity.FormLoginSpec::disable);
+        http.httpBasic(ServerHttpSecurity.HttpBasicSpec::disable);
         return http.build();
     }
 
