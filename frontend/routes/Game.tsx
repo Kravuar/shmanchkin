@@ -1,6 +1,6 @@
 import {useParams} from "react-router-dom";
 import {useEvents} from "@/sse/useEvents.ts";
-import {useEffect, useRef, useState} from "react";
+import {useRef, useState} from "react";
 import {PaperAirplaneIcon} from "@heroicons/react/24/outline";
 import {useForm} from "react-hook-form";
 import {useMutation} from "@tanstack/react-query";
