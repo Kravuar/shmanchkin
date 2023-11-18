@@ -2,7 +2,6 @@ import {useQuery} from "@tanstack/react-query";
 import {api} from "@/api.ts";
 import {PlayerInfo} from "@/types/domain.tsx";
 import {usePlayer} from "@/usePlayer.ts";
-import {useEffect} from "react";
 import {Outlet} from "react-router-dom";
 import {AxiosError} from "axios";
 import {IdentifyModal} from "@/widgets/IdentifyModal.tsx";
@@ -16,13 +15,10 @@ export const Identificated = () => {
     })
     const setPlayer = usePlayer(state => state.setPlayer)
 
-    useEffect(() => {
-        if (isSuccess)
-            setPlayer(player)
-    }, [isSuccess, player, setPlayer])
-
-    if (isSuccess)
+    if (isSuccess){
+        setPlayer(player)
         return <Outlet/>
+    }
 
     if (error) {
         console.log('user data error', error)
