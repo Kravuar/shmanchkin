@@ -10,8 +10,8 @@ import {CreateGame} from "@/routes/CreateGame.tsx";
 import {Game} from "@/routes/Game.tsx";
 import {Test} from "@/routes/Test.tsx";
 import {Main} from "@/routes/Main.tsx";
-import {PlayerInfoBlock} from "@/widgets/PlayerInfoBlock.tsx";
 import {AlertProvider} from "@/alert/AlertProvider.tsx";
+import {Identificated} from "@/routes/Identificated.tsx";
 
 
 const queryClient = new QueryClient({
@@ -27,30 +27,35 @@ const queryClient = new QueryClient({
 const router = createBrowserRouter([
     {
         path: '/',
-        element: <Main/>
-    },
-    {
-        path: "/games",
-        element: <Games/>,
-    },
-    {
-        path: "/create-game",
-        element: <CreateGame/>
-    },
-    {
-        path: "/games/:lobbyName",
-        element: <Game/>
-    },
-    {
-        path: "/test",
-        element: <Test/>
+        element: <Identificated/>,
+        children: [
+            {
+                path: '/',
+                element: <Main/>,
+            },
+            {
+                path: "/games",
+                element: <Games/>,
+            },
+            {
+                path: "/create-game",
+                element: <CreateGame/>
+            },
+            {
+                path: "/games/:lobbyName",
+                element: <Game/>
+            },
+            {
+                path: "/test",
+                element: <Test/>
+            }
+        ]
     }
 ])
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <QueryClientProvider client={queryClient}>
-            <PlayerInfoBlock/>
             {/*<AlertTester/>*/}
             <AlertProvider/>
             <RouterProvider router={router}/>
