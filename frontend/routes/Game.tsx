@@ -1,15 +1,21 @@
-import {useParams} from "react-router-dom";
+import {Link, useParams} from "react-router-dom";
 import {useEvents} from "@/sse/useEvents.ts";
-import {useRef, useState} from "react";
+import {Fragment, useRef, useState} from "react";
 import {PaperAirplaneIcon} from "@heroicons/react/24/outline";
 import {useForm} from "react-hook-form";
-import {useMutation} from "@tanstack/react-query";
+import {useMutation, useQuery} from "@tanstack/react-query";
 import {api} from "@/api.ts";
 import {Player} from "@/types/domain.tsx";
 import useResizeObserver from "use-resize-observer";
 import {useAlertStore} from "@/alert/useAlert.tsx";
 import {nanoid} from "nanoid";
 import {usePlayer} from "@/usePlayer.ts";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import tw from 'twin.macro'
+import {Spinner} from "@/components/Spinner.tsx";
+import {RedButton, YellowButton} from "@/components/Button.tsx";
 
 type ChatFormValues = {
     message: string
@@ -25,10 +31,59 @@ type PlayersFullUpdateEventData = {
     players: Array<Player>
 }
 
+type LobbyInfo = {
+    lobbyName: string
+    owner: Player
+    playersJoined: Player[]
+}
+
 export const Game = () => {
     const player = usePlayer(state => state.player)!
     const pushAlert = useAlertStore(state => state.push)
     const {lobbyName} = useParams()
+    const {data: lobbyInfo} = useQuery({
+        queryFn: async () => (await api.get('/games/info')).data as LobbyInfo,
+        queryKey: ['game/info', lobbyName]
+    })
+    const closeLobby = useMutation({
+        mutationFn: () => api.delete('/games/close'),
+        onSuccess: () => {
+            pushAlert({
+                id: nanoid(),
+                type: "success",
+                header: "Лобби распущено",
+                message: ""
+            })
+        },
+        onError: () => {
+            pushAlert({
+                id: nanoid(),
+                type: "error",
+                header: "Ошибка",
+                message: ""
+            })
+        }
+    })
+    const startLobby = useMutation({
+        mutationFn: () => api.put('/games/start'),
+        onSuccess: () => {
+            pushAlert({
+                id: nanoid(),
+                type: "success",
+                header: "Игра начата",
+                message: ""
+            })
+        },
+        onError: () => {
+            pushAlert({
+                id: nanoid(),
+                type: "error",
+                header: "Ошибка",
+                message: ""
+            })
+        }
+    })
+
     const [messages, setMessage] = useState<MessageEventData[]>([])
     console.log('messages', messages)
 
@@ -39,13 +94,7 @@ export const Game = () => {
         'player-message': (e: MessageEvent<string>) => {
             console.log('message', e.data)
             const message = JSON.parse(e.data) as MessageEventData
-            setMessage(messages => [...messages, {
-                ...message,
-                sender: {
-                    ...message.sender,
-                    username: message.sender.username === player.username ? 'Вы' : message.sender.username
-                }
-            } as MessageEventData])
+            setMessage(messages => [...messages, message])
         },
         'game-status-change': (e: MessageEvent<string>) => {
             console.log('game status', e.data)
@@ -89,30 +138,32 @@ export const Game = () => {
             <div style={{
                 boxShadow: "0px 0px 70px 0px #1C1917"
             }}
-                 className={'mx-auto w-full max-w-[909px] rounded-[36px] bg-stone-800 text-[20px] py-6 px-[72px] text-center'}
+                 className={'mx-auto w-full max-w-[909px] rounded-[36px] bg-stone-800 text-[20px] py-6 px-[72px]'}
             >
-                <h1 className={'mt-10 font-bold text-4xl'}>
-                    Игра: {lobbyName}
-                </h1>
-                {/*<h2 className={'mt-6 text-lg flex gap-3'}>*/}
-                {/*    <div>*/}
-                {/*        Создатель:*/}
-                {/*    </div>*/}
-                {/*    <div>*/}
-                {/*        Говно2000ИзЖопы*/}
-                {/*    </div>*/}
-                {/*</h2>*/}
-                <div className={'w-full mt-8'}>
-                    <div className={'bg-stone-700 w-full flex flex-col h-[300px] rounded-3xl px-10 py-3'}>
-                        <div className={'h-full overflow-y-auto flex flex-col gap-3 p-2'}>
-                            <div ref={messagesRef}>
+                <div className={'flex flex-col items-center'}>
+                    <h1 className={'mt-10 font-bold text-4xl'}>
+                        Игра: {lobbyName}
+                    </h1>
+                    <h2 className={'mt-6 text-xl flex gap-2'}>
+                        Создатель: { lobbyInfo?.owner.username ?? <Spinner/>}
+                    </h2>
+                </div>
+                <div className={'w-full mt-8 flex gap-[21px]'}>
+                    <div className={'bg-stone-700 basis-[750px] flex flex-col h-[300px] rounded-3xl px-10 py-3'}>
+                        <div className={'h-full overflow-y-auto p-2'}>
+                            <div ref={messagesRef} className={'flex flex-col gap-3'}>
                                 {
                                     messages.map(message => (
-                                        <div className={'w-full flex flex-col gap-1 text-start'}>
-                                            <div className={'text-base'}>
-                                                {message.sender.username}:
+                                        <div className={`px-1 py-0.5 w-full flex flex-col gap-1 text-start border border-stone-400 rounded`}>
+                                            <div css={[
+                                                tw`text-base`,
+                                                message.sender.username === player.username && tw`text-amber-300`
+                                            ]}>
+                                                {
+                                                    message.sender.username === player.username ? 'Вы' : message.sender.username
+                                                }:
                                             </div>
-                                            <div className={'ps-6 text-sm'}>
+                                            <div className={'px-6 text-sm'}>
                                                 {message.message}
                                             </div>
                                         </div>
@@ -128,6 +179,34 @@ export const Game = () => {
                             </button>
                         </form>
                     </div>
+                    <div className={'bg-stone-700 basis-[350px] flex flex-col items-start px-12 py-8 rounded-3xl'}>
+                        {
+                            players.map((player) => (
+                                <div key={player.uuid}>
+                                    {player.username}
+                                </div>
+                            ))
+                        }
+                    </div>
+                </div>
+                <div className={'mt-7 flex flex-wrap gap-2'}>
+                    {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+                    {/* @ts-ignore */}
+                        <RedButton as={Link} to={'/games'}>
+                            Покинуть
+                        </RedButton>
+                    {
+                        lobbyInfo?.owner.uuid === player.uuid ? (
+                            <Fragment>
+                                <YellowButton onClick={() => startLobby.mutate()} disabled={startLobby.isPending}>
+                                    Запустить
+                                </YellowButton>
+                                <RedButton onClick={() => closeLobby.mutate()} disabled={closeLobby.isPending}>
+                                    Распустить
+                                </RedButton>
+                            </Fragment>
+                        ) : null
+                    }
                 </div>
             </div>
         </div>
