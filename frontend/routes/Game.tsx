@@ -9,6 +9,7 @@ import {Player} from "@/types/domain.tsx";
 import useResizeObserver from "use-resize-observer";
 import {useAlertStore} from "@/alert/useAlert.tsx";
 import {nanoid} from "nanoid";
+import {usePlayer} from "@/usePlayer.ts";
 
 type ChatFormValues = {
     message: string
@@ -24,8 +25,8 @@ type PlayersFullUpdateEventData = {
     players: Array<Player>
 }
 
-// TODO: прокрутка до последнего сообщеия
 export const Game = () => {
+    const player = usePlayer(state => state.player)!
     const pushAlert = useAlertStore(state => state.push)
     const {lobbyName} = useParams()
     const [messages, setMessage] = useState<MessageEventData[]>([])
@@ -38,7 +39,13 @@ export const Game = () => {
         'player-message': (e: MessageEvent<string>) => {
             console.log('message', e.data)
             const message = JSON.parse(e.data) as MessageEventData
-            setMessage(messages => [...messages, message])
+            setMessage(messages => [...messages, {
+                ...message,
+                sender: {
+                    ...message.sender,
+                    username: message.sender.username === player.username ? 'Вы' : message.sender.username
+                }
+            } as MessageEventData])
         },
         'game-status-change': (e: MessageEvent<string>) => {
             console.log('game status', e.data)
