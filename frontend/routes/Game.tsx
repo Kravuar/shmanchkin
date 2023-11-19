@@ -107,6 +107,9 @@ export const Game = () => {
             navigate('/games')
         },
         'game-status-change': (e: MessageEvent<string>) => {
+            const data = JSON.parse(e.data) as {status: "ACTIVE"}
+            if(data.status === 'ACTIVE')
+                navigate('')
             console.log('game status', e.data)
         },
         'players-full-update': (e: MessageEvent<string>) => {
