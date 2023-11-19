@@ -3,7 +3,7 @@ package net.kravuar.shmanchkin.domain.model.dto.events;
 import lombok.Getter;
 import lombok.Setter;
 import net.kravuar.shmanchkin.domain.model.dto.LobbyDTO;
-import net.kravuar.shmanchkin.domain.model.game.Game;
+import net.kravuar.shmanchkin.domain.model.game.GameLobby;
 
 import java.util.Collection;
 
@@ -12,8 +12,8 @@ import java.util.Collection;
 public class GameListFullUpdateDTO extends EventDTO {
     private Collection<LobbyDTO> games;
 
-    public GameListFullUpdateDTO(Collection<Game> games) {
+    public GameListFullUpdateDTO(Collection<GameLobby> gameLobbies) {
         super("game-full-update");
-        this.games = games.stream().map(LobbyDTO::new).toList();
+        this.games = gameLobbies.stream().map(LobbyDTO::new).toList();
     }
 }

@@ -10,7 +10,7 @@ import net.kravuar.shmanchkin.domain.model.dto.events.GameListFullUpdateDTO;
 import net.kravuar.shmanchkin.domain.model.dto.events.GameListUpdateDTO;
 import net.kravuar.shmanchkin.domain.model.dto.events.MessageDTO;
 import net.kravuar.shmanchkin.domain.model.exceptions.*;
-import net.kravuar.shmanchkin.domain.model.game.Game;
+import net.kravuar.shmanchkin.domain.model.game.GameLobby;
 import net.kravuar.shmanchkin.domain.model.game.GameListUpdateAction;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.integration.dsl.MessageChannels;
@@ -33,7 +33,7 @@ import java.util.concurrent.*;
 public class GameService {
     private final UserService userService;
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
-    private final Map<String, Game> games = new ConcurrentHashMap<>();
+    private final Map<String, GameLobby> games = new ConcurrentHashMap<>();
     private final Map<String, ScheduledFuture<?>> autoCloseTasks = new ConcurrentHashMap<>();
     private final SubscribableChannel gameListChannel = MessageChannels.publishSubscribe("GameList").getObject();
 
@@ -70,7 +70,7 @@ public class GameService {
                 .map(LobbyDTO::new).toList());
     }
 
-    public Map<String, Game> getGames() {
+    public Map<String, GameLobby> getGames() {
         return Collections.unmodifiableMap(games);
     }
 
@@ -93,8 +93,8 @@ public class GameService {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
                     if (!currentUser.isIdle())
-                        return Mono.error(new AlreadyInGameException(currentUser.getGame().getLobbyName()));
-                    var game = new Game(
+                        return Mono.error(new AlreadyInGameException(currentUser.getGameLobby().getLobbyName()));
+                    var game = new GameLobby(
                             gameForm.getLobbyName(),
                             currentUser
                     );
@@ -116,11 +116,11 @@ public class GameService {
                 });
     }
 
-    public synchronized Flux<ServerSentEvent<EventDTO>> joinGame(String lobbyName) {
+    public Flux<ServerSentEvent<EventDTO>> joinGame(String lobbyName) {
         return userService.getCurrentUser()
                 .flatMapMany(currentUser -> {
                     if (!currentUser.isIdle())
-                        return Flux.error(new AlreadyInGameException(currentUser.getGame().getLobbyName()));
+                        return Flux.error(new AlreadyInGameException(currentUser.getGameLobby().getLobbyName()));
 
                     var game = games.get(lobbyName);
                     if (game == null)
@@ -158,7 +158,7 @@ public class GameService {
                 .flatMap(currentUser -> {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
-                    var game = currentUser.getGame();
+                    var game = currentUser.getGameLobby();
                     game.removePlayer(currentUser);
                     if (game.getPlayers().isEmpty())
                         scheduleAutoClose(game.getLobbyName());
@@ -171,7 +171,7 @@ public class GameService {
                 .flatMap(currentUser -> {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
-                    var game = currentUser.getGame();
+                    var game = currentUser.getGameLobby();
                     if (!Objects.equals(game.getOwner(), currentUser))
                         return Mono.error(new ForbiddenActionException(game.getLobbyName(), "Выгнать игрока"));
                     var player = game.getPlayer(username);
@@ -189,7 +189,7 @@ public class GameService {
                 .flatMap(currentUser -> {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
-                    var game = currentUser.getGame();
+                    var game = currentUser.getGameLobby();
                     if (!Objects.equals(game.getOwner(), currentUser))
                         return Mono.error(new ForbiddenActionException(game.getLobbyName(), "Начать игру"));
                     game.start();
@@ -200,13 +200,13 @@ public class GameService {
     public Mono<Void> closeGame() {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
-                    if (currentUser.getGame() == null)
+                    if (currentUser.getGameLobby() == null)
                         return Mono.error(new UserIsIdleException("Нет созданной игры."));
-                    var game = currentUser.getGame();
+                    var game = currentUser.getGameLobby();
                     if (!Objects.equals(game.getOwner(), currentUser))
                         return Mono.error(new ForbiddenActionException(game.getLobbyName(), "Закрыть игру"));
-                    game.close();
                     games.remove(game.getLobbyName());
+                    game.close();
                     gameListChannel.send(new GenericMessage<>(new GameListUpdateDTO(game, GameListUpdateAction.CLOSED)));
                     gameListChannel.send(new GenericMessage<>(new GameListFullUpdateDTO(games.values())));
                     return Mono.empty();
@@ -219,7 +219,7 @@ public class GameService {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
                     else {
-                        currentUser.getGame().send(new MessageDTO(currentUser, message));
+                        currentUser.getGameLobby().send(new MessageDTO(currentUser, message));
                         return Mono.empty();
                     }
                 });
@@ -228,7 +228,7 @@ public class GameService {
     public Mono<LobbyDTO> getLobbyInfo() {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
-                    var game = currentUser.getGame();
+                    var game = currentUser.getGameLobby();
                     if (game == null)
                         return Mono.error(new UserIsIdleException("Пользователь не в игре."));
                     return Mono.just(new LobbyDTO(game));
@@ -237,7 +237,7 @@ public class GameService {
 
     public UserInfo getActiveUser(@NonNull UUID uuid) {
         UserInfo user = null;
-        for (var game: getGames().values()) {
+        for (var game : getGames().values()) {
             if (game.getOwner().getUuid().equals(uuid)) {
                 user = game.getOwner();
                 break;

@@ -6,7 +6,7 @@ import lombok.NonNull;
 import net.kravuar.shmanchkin.domain.model.dto.events.EventDTO;
 import net.kravuar.shmanchkin.domain.model.exceptions.UserIsIdleException;
 import net.kravuar.shmanchkin.domain.model.game.Character;
-import net.kravuar.shmanchkin.domain.model.game.Game;
+import net.kravuar.shmanchkin.domain.model.game.GameLobby;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.SubscribableChannel;
@@ -24,7 +24,7 @@ public class UserInfo {
     private String username;
 
     @Getter
-    private Game game;
+    private GameLobby gameLobby;
     private FluxSink<ServerSentEvent<EventDTO>> sink;
     private MessageHandler messageHandler;
 
@@ -35,18 +35,18 @@ public class UserInfo {
         this.username = username;
     }
 
-    public void setInfo(@NonNull Game game, FluxSink<ServerSentEvent<EventDTO>> sink, MessageHandler messageHandler) {
-        this.game = game;
+    public void setInfo(@NonNull GameLobby gameLobby, FluxSink<ServerSentEvent<EventDTO>> sink, MessageHandler messageHandler) {
+        this.gameLobby = gameLobby;
         this.sink = sink;
         this.messageHandler = messageHandler;
     }
 
     public boolean isIdle() {
-        return game == null || sink == null || messageHandler == null;
+        return gameLobby == null || sink == null || messageHandler == null;
     }
 
     public void toIdle() {
-        this.game = null;
+        this.gameLobby = null;
         this.sink.complete();
         this.sink = null;
         this.messageHandler = null;

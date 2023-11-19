@@ -18,8 +18,8 @@ import java.util.*;
 
 @Validated
 @EqualsAndHashCode(of = "lobbyName")
-public class Game {
-    public Game(@Length(min = 3, max = 30) String lobbyName, UserInfo owner) {
+public class GameLobby {
+    public GameLobby(@Length(min = 3, max = 30) String lobbyName, UserInfo owner) {
         this.lobbyName = lobbyName;
         this.owner = owner;
         this.channel = MessageChannels.publishSubscribe(lobbyName).getObject();
@@ -44,7 +44,7 @@ public class Game {
         return playersJoined.size() == MaxPlayers;
     }
 
-    public void addPlayer(UserInfo userInfo) {
+    public synchronized void addPlayer(UserInfo userInfo) {
         if (isFull())
             throw new GameIsFullException(lobbyName);
         if (status == GameStatus.ACTIVE)
@@ -67,7 +67,7 @@ public class Game {
                 .orElse(null);
     }
 
-    public void removePlayer(UserInfo userInfo) {
+    public synchronized void removePlayer(UserInfo userInfo) {
         var removed = playersJoined.remove(userInfo.getUsername());
         if (removed != null) {
             send(new LobbyUpdateDTO(userInfo, LobbyPlayerUpdateAction.DISCONNECTED));
@@ -78,7 +78,7 @@ public class Game {
         }
     }
 
-    public void start() {
+    public synchronized void start() {
         if (status == GameStatus.ACTIVE)
             throw new GameIsActiveException(lobbyName);
         if (playersJoined.size() < MinPlayers)
@@ -88,10 +88,10 @@ public class Game {
 //        TODO: Other game init stuff
     }
 
-    public void close() {
+    public synchronized void close() {
+        send(new GameStatusChangedDTO(GameStatus.CLOSED));
         for (var player: new ArrayList<>(playersJoined.values()))
             removePlayer(player);
-        send(new GameStatusChangedDTO(GameStatus.CLOSED));
     }
 
     public void send(EventDTO eventMessage) {

@@ -43,8 +43,8 @@ public class GameController {
             <pre>
             Подписка на обновления списка лобби с открытием SSE потока.
             Подписка возможна на 3 ивента:
-                game-created/game-closed,
-                game-full-update.
+                gameLobby-created/gameLobby-closed,
+                gameLobby-full-update.
             </pre>
             """
     )
@@ -83,7 +83,7 @@ public class GameController {
             Возможны следующие ивенты:
                 На всех стадиях:
                     userInfo-message
-                    game-status-change
+                    gameLobby-status-change
                 В стадии ожидания:
                     userInfo-connected/userInfo-disconnected
                     userInfos-full-update
