@@ -25,7 +25,7 @@ public class GameLobby {
         this.channel = MessageChannels.publishSubscribe(lobbyName).getObject();
     }
 
-    public static final int MinPlayers = 4;
+    public static final int MinPlayers = 1;
     public static final int MaxPlayers = 6;
     private final Map<String, UserInfo> playersJoined = new HashMap<>();
     private final SubscribableChannel channel;
