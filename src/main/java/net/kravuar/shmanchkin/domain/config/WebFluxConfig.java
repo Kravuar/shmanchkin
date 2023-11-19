@@ -39,6 +39,7 @@ public class WebFluxConfig {
             @Override
             public void addCorsMappings(@NonNull CorsRegistry registry) {
                 registry.addMapping("/**")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE")
                         .allowedOrigins(webProps.getAllowedOrigins().toArray(String[]::new));
             }
         };
