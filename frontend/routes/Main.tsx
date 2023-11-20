@@ -2,12 +2,12 @@ import {Link} from "react-router-dom";
 import tw from "twin.macro";
 import styled from "@emotion/styled";
 import {css} from "@emotion/react";
-import video from "@/assets/video.webm";
+import video from "@/assets/video.mp4";
 
 export const Main = () => {
     return (
         <div tw={'w-full min-h-screen relative'}>
-            <div className={'absolute blur-xl h-screen w-full'}>
+            <div className={'absolute h-screen w-full'}>
                 <video src={video} playsInline autoPlay muted loop className={'object-cover h-screen w-auto'}/>
             </div>
             <div tw={'absolute text-white flex place-items-center h-screen w-full'}>
