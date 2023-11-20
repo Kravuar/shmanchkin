@@ -2,7 +2,7 @@ import {Link} from "react-router-dom";
 import tw from "twin.macro";
 import styled from "@emotion/styled";
 import {css} from "@emotion/react";
-import video from "@/assets/video.mp4";
+import video from "@/assets/video_lowBitRate_AV1_60fps.mp4";
 
 export const Main = () => {
     return (
