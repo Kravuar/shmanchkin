@@ -9,7 +9,6 @@ import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
-import org.springframework.messaging.SubscribableChannel;
 import reactor.core.publisher.FluxSink;
 
 @RequiredArgsConstructor

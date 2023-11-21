@@ -1,22 +1,19 @@
 package net.kravuar.shmanchkin.domain.model.account;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
 import net.kravuar.shmanchkin.domain.model.dto.events.EventDTO;
 import net.kravuar.shmanchkin.domain.model.exceptions.UserIsIdleException;
 import net.kravuar.shmanchkin.domain.model.game.Character;
-import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
 
 import java.util.UUID;
 
 @Getter
-@EqualsAndHashCode(of = {"uuid"})
 public class UserInfo {
-    @Getter
     private final UUID uuid;
-    @Getter
-    private String username;
-    @Getter
+    private final String username;
     @Setter
     private GameSubscription subscription;
 

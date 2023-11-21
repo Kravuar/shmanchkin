@@ -1,6 +1,7 @@
 package net.kravuar.shmanchkin.domain.model.game;
 
-public enum GameListUpdateAction {
-    CREATED,
+public enum LobbyStatus {
+    IDLE,
+    ACTIVE,
     CLOSED
 }

@@ -97,7 +97,7 @@ public class GameController {
             @ApiResponse(responseCode = "200", description = "Успешное подключение.",
                     content = @Content(schema = @Schema(anyOf = {
                             MessageDTO.class,
-                            GameStatusChangedDTO.class,
+                            LobbyStatusChangedDTO.class,
                             LobbyUpdateDTO.class,
                             LobbyFullUpdateDTO.class,
                             KickedDTO.class

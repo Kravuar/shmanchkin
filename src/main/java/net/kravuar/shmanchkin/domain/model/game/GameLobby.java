@@ -1,97 +1,106 @@
 package net.kravuar.shmanchkin.domain.model.game;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import net.kravuar.shmanchkin.domain.model.account.UserInfo;
 import net.kravuar.shmanchkin.domain.model.dto.events.*;
-import net.kravuar.shmanchkin.domain.model.exceptions.GameIsActiveException;
 import net.kravuar.shmanchkin.domain.model.exceptions.GameIsFullException;
+import net.kravuar.shmanchkin.domain.model.exceptions.IllegalLobbyStatusException;
 import net.kravuar.shmanchkin.domain.model.exceptions.NotEnoughPlayersException;
 import net.kravuar.shmanchkin.domain.model.exceptions.UsernameTakenException;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
-import org.springframework.validation.annotation.Validated;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
-@Validated
-@EqualsAndHashCode(of = "lobbyName")
 public class GameLobby {
-    public GameLobby(@Length(min = 3, max = 30) String lobbyName, UserInfo owner) {
-        this.lobbyName = lobbyName;
-        this.owner = owner;
-        this.channel = MessageChannels.publishSubscribe(lobbyName).getObject();
-    }
-
-    public static final int MinPlayers = 4;
+    public static final int MinPlayers = 1;
     public static final int MaxPlayers = 6;
-    private final Map<String, UserInfo> playersJoined = new HashMap<>();
-    private final SubscribableChannel channel;
+
+    private final Game game;
     @Getter
     private final String lobbyName;
     @Getter
     private final UserInfo owner;
     @Getter
-    private GameStatus status = GameStatus.IDLE;
+    private LobbyStatus lobbyStatus = LobbyStatus.IDLE;
+    private final SubscribableChannel channel;
+    private final Map<UUID, UserInfo> playersJoined = new HashMap<>();
 
-    public Map<String, UserInfo> getPlayers() {
-        return Collections.unmodifiableMap(playersJoined);
+    public GameLobby(@Length(min = 3, max = 30) String lobbyName, UserInfo owner) {
+        this.game = new Game();
+        this.lobbyName = lobbyName;
+        this.owner = owner;
+        this.channel = MessageChannels.publishSubscribe(lobbyName).getObject();
+    }
+
+    public Collection<UserInfo> getPlayers() {
+        return playersJoined.values();
+    }
+
+    public UserInfo getPlayer(UUID uuid) {
+        return playersJoined.get(uuid);
+    }
+
+    public UserInfo getPlayer(String username) {
+        return playersJoined.values().stream()
+                .filter(somePlayer -> somePlayer.getUsername().equals(username))
+                .findFirst()
+                .orElse(null);
     }
 
     public boolean isFull() {
         return playersJoined.size() == MaxPlayers;
     }
 
-    public synchronized void addPlayer(UserInfo userInfo) {
+    public synchronized void addPlayer(UserInfo player) {
         if (isFull())
             throw new GameIsFullException(lobbyName);
-        if (status == GameStatus.ACTIVE)
-            throw new GameIsActiveException(lobbyName);
-        if (playersJoined.putIfAbsent(userInfo.getUsername(), userInfo) != null)
-            throw new UsernameTakenException(lobbyName, userInfo.getUsername());
-        userInfo.subscribe(channel);
-        send(new LobbyUpdateDTO(userInfo, LobbyPlayerUpdateAction.CONNECTED));
-        send(new LobbyFullUpdateDTO(getPlayers().values()));
+        if (lobbyStatus == LobbyStatus.ACTIVE)
+            throw new IllegalLobbyStatusException(lobbyName, LobbyStatus.ACTIVE);
+        var usernameTaken = playersJoined.values().stream()
+                .anyMatch(somePlayer -> somePlayer.getUsername().equals(player.getUsername()));
+        if (usernameTaken)
+            throw new UsernameTakenException(lobbyName, player.getUsername());
+        playersJoined.put(player.getUuid(), player);
+        game.addCharacter(player.getUsername(), new Character());
+        channel.subscribe(player.getSubscription());
+        send(new LobbyUpdateDTO(player, LobbyPlayerUpdateAction.CONNECTED));
+        send(new LobbyFullUpdateDTO(playersJoined.values()));
     }
 
-    public UserInfo getPlayer(String username) {
-        return playersJoined.get(username);
-    }
+    public synchronized boolean removePlayer(UserInfo player) {
+        if (playersJoined.remove(player.getUsername()) != null) {
+            game.removeCharacter(player.getUsername());
+            player.send(new KickedDTO());
+            send(new LobbyUpdateDTO(player, LobbyPlayerUpdateAction.DISCONNECTED));
+            send(new LobbyFullUpdateDTO(playersJoined.values()));
+            channel.unsubscribe(player.getSubscription());
+            player.toIdle();
 
-    public UserInfo getPlayer(UUID uuid) {
-        return playersJoined.values().stream()
-                .filter(user -> user.getUuid().equals(uuid))
-                .findFirst()
-                .orElse(null);
-    }
-
-    public synchronized void removePlayer(UserInfo userInfo) {
-        var removed = playersJoined.remove(userInfo.getUsername());
-        if (removed != null) {
-            send(new LobbyUpdateDTO(userInfo, LobbyPlayerUpdateAction.DISCONNECTED));
-            send(new LobbyFullUpdateDTO(getPlayers().values()));
-            removed.send(new KickedDTO());
-            userInfo.unsubscribe(channel);
-            userInfo.toIdle();
+            return true;
         }
+        return false;
     }
 
     public synchronized void start() {
-        if (status == GameStatus.ACTIVE)
-            throw new GameIsActiveException(lobbyName);
+        if (lobbyStatus != LobbyStatus.IDLE)
+            throw new IllegalLobbyStatusException(lobbyName, lobbyStatus);
         if (playersJoined.size() < MinPlayers)
             throw new NotEnoughPlayersException(lobbyName, MinPlayers - playersJoined.size());
-        status = GameStatus.ACTIVE;
-        send(new GameStatusChangedDTO(GameStatus.ACTIVE));
-//        TODO: Other game init stuff
+        lobbyStatus = LobbyStatus.ACTIVE;
+        game.start();
+        send(new LobbyStatusChangedDTO(LobbyStatus.ACTIVE));
     }
 
     public synchronized void close() {
-        send(new GameStatusChangedDTO(GameStatus.CLOSED));
-        for (var player: new ArrayList<>(playersJoined.values()))
+        for (var player: playersJoined.values())
             removePlayer(player);
+        send(new LobbyStatusChangedDTO(LobbyStatus.CLOSED));
     }
 
     public void send(EventDTO eventMessage) {

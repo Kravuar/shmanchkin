@@ -3,6 +3,7 @@ package net.kravuar.shmanchkin.application.services;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.kravuar.shmanchkin.application.props.GameProps;
+import net.kravuar.shmanchkin.domain.model.account.GameSubscription;
 import net.kravuar.shmanchkin.domain.model.account.UserInfo;
 import net.kravuar.shmanchkin.domain.model.dto.GameFormDTO;
 import net.kravuar.shmanchkin.domain.model.dto.LobbyDTO;
@@ -10,10 +11,10 @@ import net.kravuar.shmanchkin.domain.model.dto.events.EventDTO;
 import net.kravuar.shmanchkin.domain.model.dto.events.GameListFullUpdateDTO;
 import net.kravuar.shmanchkin.domain.model.dto.events.GameListUpdateDTO;
 import net.kravuar.shmanchkin.domain.model.dto.events.MessageDTO;
-import net.kravuar.shmanchkin.domain.model.events.LobbyCreatedEvent;
+import net.kravuar.shmanchkin.domain.model.events.LobbyListUpdateEvent;
 import net.kravuar.shmanchkin.domain.model.exceptions.*;
+import net.kravuar.shmanchkin.domain.model.game.LobbyListUpdateAction;
 import net.kravuar.shmanchkin.domain.model.game.GameLobby;
-import net.kravuar.shmanchkin.domain.model.game.GameListUpdateAction;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.codec.ServerSentEvent;
@@ -77,7 +78,7 @@ public class GameService {
                         return Mono.error(new GameAlreadyExistsException(previousGame.getLobbyName()));
                     return Mono.just(game);
                 })
-                .doOnSuccess(gameLobby -> publisher.publishEvent(new LobbyCreatedEvent(gameLobby)))
+                .doOnSuccess(gameLobby -> publisher.publishEvent(new LobbyListUpdateEvent(gameLobby, LobbyListUpdateAction.CREATED)))
                 .then();
     }
 
@@ -87,25 +88,25 @@ public class GameService {
                     if (!currentUser.isIdle())
                         return Flux.error(new AlreadyInGameException(currentUser.getSubscription().getGameLobby().getLobbyName()));
 
-                    var game = games.get(lobbyName);
-                    if (game == null)
+                    var gameLobby = games.get(lobbyName);
+                    if (gameLobby == null)
                         return Flux.error(new GameNotFoundException(lobbyName));
 
-                    return Flux.create(sink -> {
-                        var handler = simpleSinkHandler(sink);
+                    return Flux.<ServerSentEvent<EventDTO>>create(sink -> {
                         try {
-                            game.addPlayer(currentUser);
-                            sink.onDispose(() -> {
-                                game.removePlayer(currentUser);
-                                if (game.getPlayers().isEmpty())
-                                    scheduleAutoClose(game.getLobbyName());
-                            });
+                            currentUser.setSubscription(new GameSubscription(
+                                    gameLobby,
+                                    sink,
+                                    simpleSinkHandler(sink)
+                            ));
+                            gameLobby.addPlayer(currentUser);
+                            sink.onDispose(() -> removePlayer(gameLobby, currentUser));
                         } catch (Exception joinFailedException) {
                             sink.error(joinFailedException);
-                            sink.complete();
+                            currentUser.toIdle();
                         }
                     }, FluxSink.OverflowStrategy.LATEST);
-                }).doOnSubscribe(() -> publisher.publishEvent());
+                }).doOnSubscribe(() -> publisher.publishEvent()); // TODO: user joined + cancel autoclose handler
     }
 
     public Mono<Void> leaveGame() {
@@ -113,11 +114,8 @@ public class GameService {
                 .flatMap(currentUser -> {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
-                    var game = currentUser.getGameLobby();
-                    game.removePlayer(currentUser);
-                    if (game.getPlayers().isEmpty())
-                        scheduleAutoClose(game.getLobbyName());
-                    return Mono.empty();
+                    var gameLobby = currentUser.getSubscription().getGameLobby();
+                    return removePlayer(gameLobby, currentUser);
                 });
     }
 
@@ -126,16 +124,13 @@ public class GameService {
                 .flatMap(currentUser -> {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
-                    var game = currentUser.getGameLobby();
-                    if (!Objects.equals(game.getOwner(), currentUser))
-                        return Mono.error(new ForbiddenActionException(game.getLobbyName(), "Выгнать игрока"));
-                    var player = game.getPlayer(username);
+                    var gameLobby = currentUser.getSubscription().getGameLobby();
+                    if (!Objects.equals(gameLobby.getOwner(), currentUser))
+                        return Mono.error(new ForbiddenActionException(gameLobby.getLobbyName(), "Выгнать игрока"));
+                    var player = gameLobby.getPlayer(username);
                     if (player == null)
-                        return Mono.error(new PlayerNotFoundException(game.getLobbyName(), username));
-                    game.removePlayer(player);
-                    if (game.getPlayers().isEmpty())
-                        scheduleAutoClose(game.getLobbyName());
-                    return Mono.empty();
+                        return Mono.error(new PlayerNotFoundException(gameLobby.getLobbyName(), username));
+                    return removePlayer(gameLobby, player);
                 });
     }
 
@@ -144,10 +139,10 @@ public class GameService {
                 .flatMap(currentUser -> {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
-                    var game = currentUser.getGameLobby();
-                    if (!Objects.equals(game.getOwner(), currentUser))
-                        return Mono.error(new ForbiddenActionException(game.getLobbyName(), "Начать игру"));
-                    game.start();
+                    var gameLobby = currentUser.getSubscription().getGameLobby();
+                    if (!Objects.equals(gameLobby.getOwner(), currentUser))
+                        return Mono.error(new ForbiddenActionException(gameLobby.getLobbyName(), "Начать игру"));
+                    gameLobby.start();
                     return Mono.empty();
                 });
     }
@@ -155,17 +150,17 @@ public class GameService {
     public Mono<Void> closeGame() {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
-                    if (currentUser.getGameLobby() == null)
+                    if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException("Нет созданной игры."));
-                    var game = currentUser.getGameLobby();
-                    if (!Objects.equals(game.getOwner(), currentUser))
-                        return Mono.error(new ForbiddenActionException(game.getLobbyName(), "Закрыть игру"));
-                    games.remove(game.getLobbyName());
-                    game.close();
-                    gameListChannel.send(new GenericMessage<>(new GameListUpdateDTO(game, GameListUpdateAction.CLOSED)));
-                    gameListChannel.send(new GenericMessage<>(new GameListFullUpdateDTO(games.values())));
-                    return Mono.empty();
-                });
+                    var gameLobby = currentUser.getSubscription().getGameLobby();
+                    if (!Objects.equals(gameLobby.getOwner(), currentUser))
+                        return Mono.error(new ForbiddenActionException(gameLobby.getLobbyName(), "Закрыть игру"));
+                    games.remove(gameLobby.getLobbyName());
+                    gameLobby.close();
+                    return Mono.just(gameLobby);
+                })
+                .doOnSuccess(gameLobby -> publisher.publishEvent(new LobbyListUpdateEvent(gameLobby, LobbyListUpdateAction.CLOSED)))
+                .then();
     }
 
     public Mono<Void> sendMessage(String message) {
@@ -174,7 +169,8 @@ public class GameService {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
                     else {
-                        currentUser.getGameLobby().send(new MessageDTO(currentUser, message));
+                        currentUser.getSubscription().getGameLobby()
+                                .send(new MessageDTO(currentUser, message));
                         return Mono.empty();
                     }
                 });
@@ -183,21 +179,20 @@ public class GameService {
     public Mono<LobbyDTO> getLobbyInfo() {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
-                    var game = currentUser.getGameLobby();
-                    if (game == null)
+                    if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException("Пользователь не в игре."));
-                    return Mono.just(new LobbyDTO(game));
+                    return Mono.just(new LobbyDTO(currentUser.getSubscription().getGameLobby()));
                 });
     }
 
     public UserInfo getActiveUser(@NonNull UUID uuid) {
         UserInfo user = null;
-        for (var game : getLobbies().values()) {
-            if (game.getOwner().getUuid().equals(uuid)) {
-                user = game.getOwner();
+        for (var lobby : getLobbies().values()) {
+            if (lobby.getOwner().getUuid().equals(uuid)) {
+                user = lobby.getOwner();
                 break;
             }
-            user = game.getPlayer(uuid);
+            user = lobby.getPlayer(uuid);
             if (user != null)
                 break;
         }
@@ -205,14 +200,14 @@ public class GameService {
     }
 
     private void autoClose(String lobbyName) {
-        var game = games.get(lobbyName);
-        if (game == null)
+        var gameLobby = games.get(lobbyName);
+        if (gameLobby == null)
             return;
-        if (!game.getPlayers().isEmpty())
+        if (!gameLobby.getPlayers().isEmpty())
             return;
-        game.close();
+        gameLobby.close();
         games.remove(lobbyName);
-        gameListChannel.send(new GenericMessage<>(new GameListUpdateDTO(game, GameListUpdateAction.CLOSED)));
+        gameListChannel.send(new GenericMessage<>(new GameListUpdateDTO(gameLobby, LobbyListUpdateAction.CLOSED)));
         gameListChannel.send(new GenericMessage<>(new GameListFullUpdateDTO(games.values())));
         autoCloseTasks.remove(lobbyName);
     }
@@ -243,14 +238,21 @@ public class GameService {
         };
     }
 
-    @EventListener(LobbyCreatedEvent.class)
-    private void sendNotification(LobbyCreatedEvent event) {
-        gameListChannel.send(new GenericMessage<>(new GameListUpdateDTO(event.getGameLobby(), GameListUpdateAction.CREATED)));
+    private Mono<Void> removePlayer(GameLobby lobby, UserInfo player) {
+        lobby.removePlayer(player);
+        if (lobby.getPlayers().isEmpty())
+            scheduleAutoClose(lobby);
+        return Mono.empty();
+    }
+
+    @EventListener(LobbyListUpdateEvent.class)
+    private void sendNotification(LobbyListUpdateEvent event) {
+        gameListChannel.send(new GenericMessage<>(new GameListUpdateDTO(event.getGameLobby(), event.getAction())));
         gameListChannel.send(new GenericMessage<>(new GameListFullUpdateDTO(this.games.values())));
     }
 
-    @EventListener(LobbyCreatedEvent.class)
-    private void scheduleAutoClose(LobbyCreatedEvent event) {
+    @EventListener(value = LobbyListUpdateEvent.class, condition = "#event.action == LobbyListUpdateAction.CREATED")
+    private void scheduleAutoClose(LobbyListUpdateEvent event) {
         scheduleAutoClose(event.getGameLobby());
     }
 }
