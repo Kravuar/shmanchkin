@@ -12,10 +12,7 @@ import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class GameLobby {
     public final int minPlayers;
@@ -115,7 +112,7 @@ public class GameLobby {
     }
 
     public synchronized void close() {
-        for (var player: playersJoined.values())
+        for (var player: new ArrayList<>(playersJoined.values()))
             removePlayer(player);
         send(new LobbyStatusChangedDTO(LobbyStatus.CLOSED));
 
