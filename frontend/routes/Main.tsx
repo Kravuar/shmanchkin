@@ -2,17 +2,22 @@ import {Link} from "react-router-dom";
 import tw from "twin.macro";
 import styled from "@emotion/styled";
 import {css} from "@emotion/react";
+import video from "@/assets/video_lowBitRate_AV1_60fps.mp4";
 
 export const Main = () => {
     return (
-        <div tw={'text-white bg-stone-800 w-full min-h-screen pt-[50px] flex place-items-center'}>
-            <div tw={'mx-auto w-[558px] flex flex-col items-center gap-6'}>
-                <MainMenuLink to={'/games'}>
-                    Список игр
-                </MainMenuLink>
-                <MainMenuLink className={''} to={'/create-game'}>
-                    Создать игру
-                </MainMenuLink>
+        <div tw={'w-full min-h-screen relative'}>
+            <video src={video} preload={'auto'} playsInline autoPlay muted loop
+                   className={'absolute inset-0 object-cover h-full w-full'}/>
+            <div tw={'absolute inset-0 text-white flex place-items-center h-screen w-full'}>
+                <div tw={'mx-auto w-[558px] flex flex-col items-center gap-6'}>
+                    <MainMenuLink to={'/games'}>
+                        Список игр
+                    </MainMenuLink>
+                    <MainMenuLink className={''} to={'/create-game'}>
+                        Создать игру
+                    </MainMenuLink>
+                </div>
             </div>
         </div>
     )

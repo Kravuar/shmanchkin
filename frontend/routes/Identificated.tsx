@@ -30,7 +30,7 @@ export const Identificated = () => {
         else
             return (
                 <div className={'text-white bg-stone-800 w-full min-h-screen pt-[50px] flex place-items-center'}>
-                    Ошибка :(
+                    Ошибка {error.name}: {error.message}
                 </div>
             )
     }

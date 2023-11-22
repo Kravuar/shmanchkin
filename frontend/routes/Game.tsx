@@ -1,4 +1,4 @@
-import {Link, useParams} from "react-router-dom";
+import {Link, useNavigate, useParams} from "react-router-dom";
 import {useEvents} from "@/sse/useEvents.ts";
 import {Fragment, useRef, useState} from "react";
 import {PaperAirplaneIcon} from "@heroicons/react/24/outline";
@@ -38,6 +38,7 @@ type LobbyInfo = {
 }
 
 export const Game = () => {
+    const navigate = useNavigate()
     const player = usePlayer(state => state.player)!
     const pushAlert = useAlertStore(state => state.push)
     const {lobbyName} = useParams()
@@ -96,7 +97,19 @@ export const Game = () => {
             const message = JSON.parse(e.data) as MessageEventData
             setMessage(messages => [...messages, message])
         },
+        'player-kicked': () => {
+            pushAlert({
+                id: nanoid(),
+                type: "info",
+                header: "Вас кикнули",
+                message: ""
+            })
+            navigate('/games')
+        },
         'game-status-change': (e: MessageEvent<string>) => {
+            const data = JSON.parse(e.data) as {status: "ACTIVE"}
+            if(data.status === 'ACTIVE')
+                navigate('')
             console.log('game status', e.data)
         },
         'players-full-update': (e: MessageEvent<string>) => {

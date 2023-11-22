@@ -68,9 +68,10 @@ export const CreateGame = () => {
                        {...register('lobbyName')}
                 />
                 <div tw={'w-full flex justify-between'}>
-                    <RedLink to={'/'} role={'button'}>
+                    {/* @ts-ignore */}
+                    <RedButton as={Link} to={'/'} role={'button'}>
                         Отмена
-                    </RedLink>
+                    </RedButton>
                     <YellowButton type={'submit'}>
                         Создать
                     </YellowButton>
@@ -80,7 +81,3 @@ export const CreateGame = () => {
         </div>
     )
 }
-
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-const RedLink = RedButton.withComponent(Link)
