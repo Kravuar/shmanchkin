@@ -9,7 +9,7 @@ public class DetailedUserDTO extends UserDTO {
 
     public DetailedUserDTO(UserInfo userInfo) {
         super(userInfo);
-        var game = userInfo.getGameLobby();
+        var game = userInfo.getSubscription().getGameLobby();
         if (game != null)
             this.currentGame = new LobbyDTO(game);
         else

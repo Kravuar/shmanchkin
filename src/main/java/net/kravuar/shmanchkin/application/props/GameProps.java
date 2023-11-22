@@ -7,4 +7,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Data
 public class GameProps {
     private int autoCloseTimeout = 30;
+    private int lobbyMinPlayers = 1;
+    private int lobbyMaxPlayers = 6;
 }

@@ -15,7 +15,7 @@ public class LobbyDTO extends GameDTO {
     public LobbyDTO(GameLobby gameLobby) {
         super(gameLobby);
         this.owner = new UserDTO(gameLobby.getOwner());
-        this.playersJoined = gameLobby.getPlayers().values().stream()
+        this.playersJoined = gameLobby.getPlayers().stream()
                 .map(UserDTO::new)
                 .toList();
     }
