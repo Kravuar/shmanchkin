@@ -1,7 +1,7 @@
 web:
   jwt:
-    publicKeyFile: classpath:public.key
-    privateKeyFile: classpath:private.key
+    publicKeyResource: public.key
+    privateKeyResource: private.key
     issuer: shmanchkin
     access-token-expiration: 69420
     refresh-cookie-path: "/api/auth/refresh" # Explicit full path
