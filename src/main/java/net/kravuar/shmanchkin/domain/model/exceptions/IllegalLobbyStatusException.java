@@ -1,7 +1,7 @@
 package net.kravuar.shmanchkin.domain.model.exceptions;
 
 import lombok.Getter;
-import net.kravuar.shmanchkin.domain.model.game.LobbyStatus;
+import net.kravuar.shmanchkin.domain.model.gameLobby.LobbyStatus;
 
 @Getter
 public class IllegalLobbyStatusException extends GameException {

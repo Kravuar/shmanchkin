@@ -1,7 +1,7 @@
 package net.kravuar.shmanchkin.domain.model.dto;
 
 import lombok.Data;
-import net.kravuar.shmanchkin.domain.model.game.GameLobby;
+import net.kravuar.shmanchkin.domain.model.gameLobby.GameLobby;
 
 @Data
 public class GameDTO {

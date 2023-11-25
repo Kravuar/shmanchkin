@@ -3,7 +3,7 @@ package net.kravuar.shmanchkin.domain.model.dto.events;
 import lombok.Getter;
 import lombok.Setter;
 import net.kravuar.shmanchkin.domain.model.dto.LobbyDTO;
-import net.kravuar.shmanchkin.domain.model.game.GameLobby;
+import net.kravuar.shmanchkin.domain.model.gameLobby.GameLobby;
 
 import java.util.Collection;
 

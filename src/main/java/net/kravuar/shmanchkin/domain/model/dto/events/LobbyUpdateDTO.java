@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.kravuar.shmanchkin.domain.model.account.UserInfo;
 import net.kravuar.shmanchkin.domain.model.dto.UserDTO;
-import net.kravuar.shmanchkin.domain.model.game.LobbyPlayerUpdateAction;
+import net.kravuar.shmanchkin.domain.model.gameLobby.LobbyPlayerUpdateAction;
 
 @Getter
 @Setter

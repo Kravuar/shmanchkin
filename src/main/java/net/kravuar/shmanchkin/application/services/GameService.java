@@ -15,8 +15,8 @@ import net.kravuar.shmanchkin.domain.model.events.LobbyListUpdateEvent;
 import net.kravuar.shmanchkin.domain.model.events.LobbyStatusChangedEvent;
 import net.kravuar.shmanchkin.domain.model.events.PlayerLobbyUpdateEvent;
 import net.kravuar.shmanchkin.domain.model.exceptions.*;
-import net.kravuar.shmanchkin.domain.model.game.GameLobby;
-import net.kravuar.shmanchkin.domain.model.game.LobbyListUpdateAction;
+import net.kravuar.shmanchkin.domain.model.gameLobby.GameLobby;
+import net.kravuar.shmanchkin.domain.model.gameLobby.LobbyListUpdateAction;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.integration.dsl.MessageChannels;
@@ -242,13 +242,13 @@ public class GameService {
     }
 
     @EventListener(value = PlayerLobbyUpdateEvent.class,
-            condition = "#event.action == T(net.kravuar.shmanchkin.domain.model.game.LobbyPlayerUpdateAction).CONNECTED"
+            condition = "#event.action == T(net.kravuar.shmanchkin.domain.model.gameLobby.LobbyPlayerUpdateAction).CONNECTED"
     )
     protected void cancelAutoClose(PlayerLobbyUpdateEvent event) {
         cancelAutoClose(event.getGameLobby());
     }
 
-    @EventListener(value = PlayerLobbyUpdateEvent.class, condition = "#event.action == T(net.kravuar.shmanchkin.domain.model.game.LobbyPlayerUpdateAction).DISCONNECTED")
+    @EventListener(value = PlayerLobbyUpdateEvent.class, condition = "#event.action == T(net.kravuar.shmanchkin.domain.model.gameLobby.LobbyPlayerUpdateAction).DISCONNECTED")
     protected void scheduleAutoCloseOnEmpty(PlayerLobbyUpdateEvent event) {
         var gameLobby = event.getGameLobby();
         if (gameLobby.getPlayers().isEmpty())
@@ -261,7 +261,7 @@ public class GameService {
         gameListChannel.send(new GenericMessage<>(new GameListFullUpdateDTO(this.games.values())));
     }
 
-    @EventListener(value = LobbyStatusChangedEvent.class, condition = "#event.status == T(net.kravuar.shmanchkin.domain.model.game.LobbyStatus).CLOSED")
+    @EventListener(value = LobbyStatusChangedEvent.class, condition = "#event.status == T(net.kravuar.shmanchkin.domain.model.gameLobby.LobbyStatus).CLOSED")
     protected void sendGameListUpdateNotification(LobbyStatusChangedEvent event) {
         sendGameListUpdateNotification(new LobbyListUpdateEvent(
                 event.getGameLobby(),
@@ -269,7 +269,7 @@ public class GameService {
         ));
     }
 
-    @EventListener(value = LobbyListUpdateEvent.class, condition = "#event.action == T(net.kravuar.shmanchkin.domain.model.game.LobbyListUpdateAction).CREATED")
+    @EventListener(value = LobbyListUpdateEvent.class, condition = "#event.action == T(net.kravuar.shmanchkin.domain.model.gameLobby.LobbyListUpdateAction).CREATED")
     protected void scheduleAutoClose(LobbyListUpdateEvent event) {
         scheduleAutoClose(event.getGameLobby());
     }

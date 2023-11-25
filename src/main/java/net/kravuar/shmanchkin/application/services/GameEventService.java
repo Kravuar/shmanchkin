@@ -5,10 +5,10 @@ import net.kravuar.shmanchkin.domain.model.account.UserInfo;
 import net.kravuar.shmanchkin.domain.model.events.LobbyListUpdateEvent;
 import net.kravuar.shmanchkin.domain.model.events.LobbyStatusChangedEvent;
 import net.kravuar.shmanchkin.domain.model.events.PlayerLobbyUpdateEvent;
-import net.kravuar.shmanchkin.domain.model.game.GameLobby;
-import net.kravuar.shmanchkin.domain.model.game.LobbyListUpdateAction;
-import net.kravuar.shmanchkin.domain.model.game.LobbyPlayerUpdateAction;
-import net.kravuar.shmanchkin.domain.model.game.LobbyStatus;
+import net.kravuar.shmanchkin.domain.model.gameLobby.GameLobby;
+import net.kravuar.shmanchkin.domain.model.gameLobby.LobbyListUpdateAction;
+import net.kravuar.shmanchkin.domain.model.gameLobby.LobbyPlayerUpdateAction;
+import net.kravuar.shmanchkin.domain.model.gameLobby.LobbyStatus;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 

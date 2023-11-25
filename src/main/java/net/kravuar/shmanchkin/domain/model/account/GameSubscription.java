@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.kravuar.shmanchkin.domain.model.dto.events.EventDTO;
-import net.kravuar.shmanchkin.domain.model.game.GameLobby;
+import net.kravuar.shmanchkin.domain.model.gameLobby.GameLobby;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;

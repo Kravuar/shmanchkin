@@ -1,4 +1,4 @@
-package net.kravuar.shmanchkin.domain.model.game;
+package net.kravuar.shmanchkin.domain.model.gameLobby;
 
 import lombok.Getter;
 import net.kravuar.shmanchkin.application.services.GameEventService;
@@ -8,6 +8,8 @@ import net.kravuar.shmanchkin.domain.model.exceptions.GameIsFullException;
 import net.kravuar.shmanchkin.domain.model.exceptions.IllegalLobbyStatusException;
 import net.kravuar.shmanchkin.domain.model.exceptions.NotEnoughPlayersException;
 import net.kravuar.shmanchkin.domain.model.exceptions.UsernameTakenException;
+import net.kravuar.shmanchkin.domain.model.game.Character;
+import net.kravuar.shmanchkin.domain.model.game.Game;
 import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
