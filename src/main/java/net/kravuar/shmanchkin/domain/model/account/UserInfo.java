@@ -5,7 +5,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import net.kravuar.shmanchkin.domain.model.dto.events.EventDTO;
 import net.kravuar.shmanchkin.domain.model.exceptions.UserIsIdleException;
-import net.kravuar.shmanchkin.domain.model.game.Character;
+import net.kravuar.shmanchkin.domain.model.game.character.Character;
 import org.springframework.messaging.support.GenericMessage;
 
 import java.util.UUID;

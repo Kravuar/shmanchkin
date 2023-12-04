@@ -40,13 +40,13 @@ public class GameController {
     @Operation(
             summary = "Подписка на обновления списка лобби.",
             description = """
-            <pre>
-            Подписка на обновления списка лобби с открытием SSE потока.
-            Подписка возможна на 3 ивента:
-                gameLobby-created/gameLobby-closed,
-                gameLobby-full-update.
-            </pre>
-            """
+                    <pre>
+                    Подписка на обновления списка лобби с открытием SSE потока.
+                    Подписка возможна на 3 ивента:
+                        gameLobby-created/gameLobby-closed,
+                        gameLobby-full-update.
+                    </pre>
+                    """
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Поток открыт.",
@@ -74,24 +74,24 @@ public class GameController {
         return gameService.createGame(gameForm);
     }
 
-//    TODO: Переподключение
+    //    TODO: Переподключение
     @Operation(
             summary = "Подключение к лобби.",
             description = """
-            <pre>
-            Подключение к лобби, с открытием SSE потока для игровых ивентов.
-            Возможны следующие ивенты:
-                На всех стадиях:
-                    userInfo-message
-                    gameLobby-status-change
-                В стадии ожидания:
-                    userInfo-connected/userInfo-disconnected
-                    userInfos-full-update
-                    userInfo-kicked # Приходит только кикнутому игроку (вместе с остальными ивентами).
-                В стадии игры:
-                    ...
-            </pre>
-            """
+                    <pre>
+                    Подключение к лобби, с открытием SSE потока для игровых ивентов.
+                    Возможны следующие ивенты:
+                        На всех стадиях:
+                            userInfo-message
+                            gameLobby-status-change
+                        В стадии ожидания:
+                            userInfo-connected/userInfo-disconnected
+                            userInfos-full-update
+                            userInfo-kicked # Приходит только кикнутому игроку (вместе с остальными ивентами).
+                        В стадии игры:
+                            ...
+                    </pre>
+                    """
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Успешное подключение.",

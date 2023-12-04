@@ -48,10 +48,10 @@ public class WebFluxConfig {
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http, JWTAuthFilter jwtAuthFilter) {
         http.authorizeExchange(config ->
-            config
-                    .pathMatchers(webProps.getUnauthenticatedPathMatchers().toArray(String[]::new))
+                config
+                        .pathMatchers(webProps.getUnauthenticatedPathMatchers().toArray(String[]::new))
                         .permitAll()
-                    .anyExchange()
+                        .anyExchange()
                         .authenticated()
         );
         http.csrf(ServerHttpSecurity.CsrfSpec::disable);

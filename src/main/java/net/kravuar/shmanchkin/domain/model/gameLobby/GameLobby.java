@@ -8,8 +8,8 @@ import net.kravuar.shmanchkin.domain.model.exceptions.GameIsFullException;
 import net.kravuar.shmanchkin.domain.model.exceptions.IllegalLobbyStatusException;
 import net.kravuar.shmanchkin.domain.model.exceptions.NotEnoughPlayersException;
 import net.kravuar.shmanchkin.domain.model.exceptions.UsernameTakenException;
-import net.kravuar.shmanchkin.domain.model.game.Character;
 import net.kravuar.shmanchkin.domain.model.game.Game;
+import net.kravuar.shmanchkin.domain.model.game.character.CharacterImpl;
 import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
@@ -70,7 +70,7 @@ public class GameLobby {
         if (usernameTaken)
             throw new UsernameTakenException(lobbyName, player.getUsername());
         playersJoined.put(player.getUuid(), player);
-        game.addCharacter(player.getUsername(), new Character());
+        game.addCharacter(player.getUsername(), new CharacterImpl());
         channel.subscribe(player.getSubscription());
         send(new LobbyUpdateDTO(player, LobbyPlayerUpdateAction.CONNECTED));
         send(new LobbyFullUpdateDTO(playersJoined.values()));
@@ -114,7 +114,7 @@ public class GameLobby {
     }
 
     public synchronized void close() {
-        for (var player: new ArrayList<>(playersJoined.values()))
+        for (var player : new ArrayList<>(playersJoined.values()))
             removePlayer(player);
         send(new LobbyStatusChangedDTO(LobbyStatus.CLOSED));
 
