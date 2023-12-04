@@ -1,5 +1,7 @@
 package net.kravuar.shmanchkin.domain.model.game;
 
+import net.kravuar.shmanchkin.domain.model.game.character.Character;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,5 +21,13 @@ public class Game {
 
     public void start() {
 //        TODO: Other game init stuff
+    }
+
+    public enum TurnStage {
+        START,
+        PRE_BATTLE,
+        BATTLE,
+        POST_BATTLE,
+        END
     }
 }

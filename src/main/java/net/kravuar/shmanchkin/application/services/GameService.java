@@ -104,19 +104,19 @@ public class GameService {
                         return Flux.error(new GameNotFoundException(lobbyName));
 
                     return Flux.create(sink -> {
-                                try {
-                                    currentUser.setSubscription(new GameSubscription(
-                                            gameLobby,
-                                            sink,
-                                            simpleSinkHandler(sink)
-                                    ));
-                                    gameLobby.addPlayer(currentUser);
-                                    sink.onDispose(() -> gameLobby.removePlayer(currentUser));
-                                } catch (Exception joinFailedException) {
-                                    sink.error(joinFailedException);
-                                    currentUser.toIdle();
-                                }
-                            }, FluxSink.OverflowStrategy.LATEST);
+                        try {
+                            currentUser.setSubscription(new GameSubscription(
+                                    gameLobby,
+                                    sink,
+                                    simpleSinkHandler(sink)
+                            ));
+                            gameLobby.addPlayer(currentUser);
+                            sink.onDispose(() -> gameLobby.removePlayer(currentUser));
+                        } catch (Exception joinFailedException) {
+                            sink.error(joinFailedException);
+                            currentUser.toIdle();
+                        }
+                    }, FluxSink.OverflowStrategy.LATEST);
                 });
     }
 
