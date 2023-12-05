@@ -1,22 +1,13 @@
 package net.kravuar.shmanchkin.domain.model.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import net.kravuar.shmanchkin.domain.model.gameLobby.GameLobby;
 
-import java.util.Collection;
-
-@Getter
-@Setter
-public class LobbyDTO extends GameDTO {
-    private UserDTO owner;
-    private Collection<UserDTO> playersJoined;
+@Data
+public class LobbyDTO {
+    private String lobbyName;
 
     public LobbyDTO(GameLobby gameLobby) {
-        super(gameLobby);
-        this.owner = new UserDTO(gameLobby.getOwner());
-        this.playersJoined = gameLobby.getPlayers().stream()
-                .map(UserDTO::new)
-                .toList();
+        this.lobbyName = gameLobby.getLobbyName();
     }
 }

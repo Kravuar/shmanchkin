@@ -56,6 +56,7 @@ public class WebFluxConfig {
         );
         http.csrf(ServerHttpSecurity.CsrfSpec::disable);
         http.addFilterBefore(jwtAuthFilter, SecurityWebFiltersOrder.AUTHENTICATION);
+//        TODO: Hate this
         http.httpBasic(config -> config.authenticationEntryPoint(new HttpBasicServerAuthenticationEntryPoint() {
             @Override
             public Mono<Void> commence(ServerWebExchange exchange, AuthenticationException ex) {

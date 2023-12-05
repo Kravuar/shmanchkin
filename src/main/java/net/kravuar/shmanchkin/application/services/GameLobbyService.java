@@ -5,18 +5,18 @@ import lombok.RequiredArgsConstructor;
 import net.kravuar.shmanchkin.application.props.GameProps;
 import net.kravuar.shmanchkin.domain.model.account.GameSubscription;
 import net.kravuar.shmanchkin.domain.model.account.UserInfo;
+import net.kravuar.shmanchkin.domain.model.dto.FullLobbyDTO;
 import net.kravuar.shmanchkin.domain.model.dto.GameFormDTO;
-import net.kravuar.shmanchkin.domain.model.dto.LobbyDTO;
 import net.kravuar.shmanchkin.domain.model.dto.events.EventDTO;
-import net.kravuar.shmanchkin.domain.model.dto.events.GameListFullUpdateDTO;
-import net.kravuar.shmanchkin.domain.model.dto.events.GameListUpdateDTO;
-import net.kravuar.shmanchkin.domain.model.dto.events.MessageDTO;
-import net.kravuar.shmanchkin.domain.model.events.LobbyListUpdateEvent;
-import net.kravuar.shmanchkin.domain.model.events.LobbyStatusChangedEvent;
-import net.kravuar.shmanchkin.domain.model.events.PlayerLobbyUpdateEvent;
+import net.kravuar.shmanchkin.domain.model.dto.events.gameLobby.*;
+import net.kravuar.shmanchkin.domain.model.events.gameLobby.LobbyListUpdateEvent;
+import net.kravuar.shmanchkin.domain.model.events.gameLobby.LobbyStatusChangedEvent;
+import net.kravuar.shmanchkin.domain.model.events.gameLobby.MessageEvent;
+import net.kravuar.shmanchkin.domain.model.events.gameLobby.PlayerLobbyUpdateEvent;
 import net.kravuar.shmanchkin.domain.model.exceptions.*;
 import net.kravuar.shmanchkin.domain.model.gameLobby.GameLobby;
 import net.kravuar.shmanchkin.domain.model.gameLobby.LobbyListUpdateAction;
+import net.kravuar.shmanchkin.domain.model.gameLobby.SubscribableGameLobby;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.integration.dsl.MessageChannels;
@@ -38,27 +38,34 @@ import java.util.concurrent.*;
 @RequiredArgsConstructor
 @Service
 @Validated
-public class GameService {
+public class GameLobbyService {
     private final UserService userService;
     private final GameProps gameProps;
     private final GameEventService gameEventService;
     private final Map<String, GameLobby> games = new ConcurrentHashMap<>();
     private final Map<String, ScheduledFuture<?>> autoCloseTasks = new ConcurrentHashMap<>();
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
-    private final SubscribableChannel gameListChannel = MessageChannels.publishSubscribe("GameListChannel").getObject();
+    private final SubscribableChannel gameListChannel = MessageChannels
+            .publishSubscribe("GameListChannel")
+            .getObject();
 
-    public Flux<LobbyDTO> getLobbyList() {
+    public Flux<FullLobbyDTO> getLobbyList() {
         return Flux.fromIterable(games.values())
-                .map(LobbyDTO::new);
+                .map(FullLobbyDTO::new);
     }
-
     public Map<String, GameLobby> getLobbies() {
         return Collections.unmodifiableMap(games);
     }
-
     public Flux<ServerSentEvent<EventDTO>> subscribeToLobbyListUpdates() {
         return Flux.create(sink -> {
-            var handler = simpleSinkHandler(sink);
+            MessageHandler handler = message -> {
+                var gameEvent = (EventDTO) message.getPayload();
+                var event = ServerSentEvent.<EventDTO>builder()
+                        .event(gameEvent.getEventType())
+                        .data(gameEvent)
+                        .build();
+                sink.next(event);
+            };
             sink.onDispose(() -> gameListChannel.unsubscribe(handler));
             gameListChannel.subscribe(handler);
         }, FluxSink.OverflowStrategy.LATEST);
@@ -69,12 +76,11 @@ public class GameService {
                 .flatMap(currentUser -> {
                     if (!currentUser.isIdle())
                         return Mono.error(new AlreadyInGameException(currentUser.getSubscription().getGameLobby().getLobbyName()));
-                    var game = new GameLobby(
-                            gameForm.getLobbyName(),
-                            currentUser,
-                            gameEventService,
-                            gameProps.getLobbyMinPlayers(),
-                            gameProps.getLobbyMaxPlayers()
+                    var game = new SubscribableGameLobby(
+                        gameForm.getLobbyName(),
+                        currentUser,
+                        gameProps.getLobbyMinPlayers(),
+                        gameProps.getLobbyMaxPlayers()
                     );
                     var previousGame = games.putIfAbsent(
                             gameForm.getLobbyName(),
@@ -82,17 +88,17 @@ public class GameService {
                     );
                     if (previousGame != null)
                         return Mono.error(new GameAlreadyExistsException(previousGame.getLobbyName()));
-                    return Mono.just(game);
-                })
-                .doOnSuccess(gameLobby -> gameEventService
-                        .publishLobbyListUpdate(
-                                gameLobby,
-                                LobbyListUpdateAction.CREATED
-                        )
-                )
-                .then();
-    }
 
+                    gameEventService.addGameLobby(game);
+                    gameEventService.publishGameEvent(
+                        new LobbyListUpdateEvent(
+                            game,
+                            LobbyListUpdateAction.CREATED
+                        )
+                    );
+                    return Mono.empty();
+                });
+    }
     public Flux<ServerSentEvent<EventDTO>> joinGame(String lobbyName) {
         return userService.getCurrentUser()
                 .flatMapMany(currentUser -> {
@@ -107,11 +113,10 @@ public class GameService {
                         try {
                             currentUser.setSubscription(new GameSubscription(
                                     gameLobby,
-                                    sink,
-                                    simpleSinkHandler(sink)
+                                    sink
                             ));
                             gameLobby.addPlayer(currentUser);
-                            sink.onDispose(() -> gameLobby.removePlayer(currentUser));
+                            sink.onDispose(() -> gameLobby.removePlayer(currentUser, false));
                         } catch (Exception joinFailedException) {
                             sink.error(joinFailedException);
                             currentUser.toIdle();
@@ -119,18 +124,16 @@ public class GameService {
                     }, FluxSink.OverflowStrategy.LATEST);
                 });
     }
-
     public Mono<Void> leaveGame() {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
                     var gameLobby = currentUser.getSubscription().getGameLobby();
-                    gameLobby.removePlayer(currentUser);
+                    gameLobby.removePlayer(currentUser, false);
                     return Mono.empty();
                 });
     }
-
     public Mono<Void> kickPlayer(String username) {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
@@ -142,7 +145,7 @@ public class GameService {
                     var player = gameLobby.getPlayer(username);
                     if (player == null)
                         return Mono.error(new PlayerNotFoundException(gameLobby.getLobbyName(), username));
-                    gameLobby.kickPlayer(player);
+                    gameLobby.removePlayer(player, true);
                     return Mono.empty();
                 });
     }
@@ -159,7 +162,6 @@ public class GameService {
                     return Mono.empty();
                 });
     }
-
     public Mono<Void> closeGame() {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
@@ -180,22 +182,26 @@ public class GameService {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
                     else {
-                        currentUser.getSubscription().getGameLobby()
-                                .send(new MessageDTO(currentUser, message));
+                        gameEventService.publishGameEvent(
+                            new MessageEvent(
+                                currentUser.getSubscription().getGameLobby(),
+                                message,
+                                currentUser
+                            )
+                        );
                         return Mono.empty();
                     }
                 });
     }
 
-    public Mono<LobbyDTO> getLobbyInfo() {
+    public Mono<FullLobbyDTO> getLobbyInfo() {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException("Пользователь не в игре."));
-                    return Mono.just(new LobbyDTO(currentUser.getSubscription().getGameLobby()));
+                    return Mono.just(new FullLobbyDTO(currentUser.getSubscription().getGameLobby()));
                 });
     }
-
     public UserInfo getActiveUser(@NonNull UUID uuid) {
         UserInfo user = null;
         for (var lobby : getLobbies().values()) {
@@ -223,52 +229,62 @@ public class GameService {
         );
         autoCloseTasks.put(lobbyName, autoCloseTask);
     }
-
     private void cancelAutoClose(GameLobby gameLobby) {
         var task = autoCloseTasks.get(gameLobby.getLobbyName());
         if (task != null)
             task.cancel(false);
     }
 
-    private MessageHandler simpleSinkHandler(FluxSink<ServerSentEvent<EventDTO>> sink) {
-        return message -> {
-            var gameEvent = (EventDTO) message.getPayload();
-            var event = ServerSentEvent.<EventDTO>builder()
-                    .event(gameEvent.getEventType())
-                    .data(gameEvent)
-                    .build();
-            sink.next(event);
-        };
-    }
-
-    @EventListener(value = PlayerLobbyUpdateEvent.class,
-            condition = "#event.action == T(net.kravuar.shmanchkin.domain.model.gameLobby.LobbyPlayerUpdateAction).CONNECTED"
-    )
+//    Order matters
+    @EventListener(value = PlayerLobbyUpdateEvent.class, condition = "#event.action == T(net.kravuar.shmanchkin.domain.model.gameLobby.LobbyPlayerUpdateAction).CONNECTED")
     protected void cancelAutoClose(PlayerLobbyUpdateEvent event) {
         cancelAutoClose(event.getGameLobby());
     }
-
     @EventListener(value = PlayerLobbyUpdateEvent.class, condition = "#event.action == T(net.kravuar.shmanchkin.domain.model.gameLobby.LobbyPlayerUpdateAction).DISCONNECTED")
     protected void scheduleAutoCloseOnEmpty(PlayerLobbyUpdateEvent event) {
         var gameLobby = event.getGameLobby();
         if (gameLobby.getPlayers().isEmpty())
             scheduleAutoClose(gameLobby);
     }
+    @EventListener(PlayerLobbyUpdateEvent.class)
+    protected void notify(PlayerLobbyUpdateEvent event) {
+        var full = new LobbyPlayersFullUpdateDTO(event.getGameLobby().getPlayers());
+        var single = new LobbyPlayersUpdateDTO(event.getPlayer(), event.getAction());
+
+        for (var user: event.getGameLobby().getPlayers()) {
+            user.send(single);
+            user.send(full);
+        }
+    }
+    @EventListener(value = PlayerLobbyUpdateEvent.class, condition =
+            "#event.action == T(net.kravuar.shmanchkin.domain.model.gameLobby.LobbyPlayerUpdateAction).DISCONNECTED " +
+            "|| #event.action == T(net.kravuar.shmanchkin.domain.model.gameLobby.LobbyPlayerUpdateAction).KICKED"
+    )
+    protected void cancelSubscription(PlayerLobbyUpdateEvent event) {
+        event.getPlayer().toIdle();
+    }
 
     @EventListener(LobbyListUpdateEvent.class)
-    protected void sendGameListUpdateNotification(LobbyListUpdateEvent event) {
-        gameListChannel.send(new GenericMessage<>(new GameListUpdateDTO(event.getGameLobby(), event.getAction())));
-        gameListChannel.send(new GenericMessage<>(new GameListFullUpdateDTO(this.games.values())));
+    protected void notifyLobbyListUpdate(LobbyListUpdateEvent event) {
+        gameListChannel.send(new GenericMessage<>(new LobbyListUpdateDTO(event.getGameLobby(), event.getAction())));
+        gameListChannel.send(new GenericMessage<>(new LobbyListFullUpdateDTO(this.games.values())));
     }
-
-    @EventListener(value = LobbyStatusChangedEvent.class, condition = "#event.status == T(net.kravuar.shmanchkin.domain.model.gameLobby.LobbyStatus).CLOSED")
-    protected void sendGameListUpdateNotification(LobbyStatusChangedEvent event) {
-        sendGameListUpdateNotification(new LobbyListUpdateEvent(
+    @EventListener(value = LobbyStatusChangedEvent.class, condition = "#event.lobbyStatus == T(net.kravuar.shmanchkin.domain.model.gameLobby.GameLobby$LobbyStatus).CLOSED")
+    protected void removeLobbyListener(LobbyStatusChangedEvent event) {
+        gameEventService.removeGameLobby((SubscribableGameLobby) event.getGameLobby());
+    }
+    @EventListener(LobbyStatusChangedEvent.class)
+    protected void notifyLobbyStatusUpdate(LobbyStatusChangedEvent event) {
+        for (var player: event.getGameLobby().getPlayers())
+            player.send(new LobbyStatusChangedDTO(event.getLobbyStatus()));
+//        Status change to IDLE wont happen
+        notifyLobbyListUpdate(new LobbyListUpdateEvent(
                 event.getGameLobby(),
-                LobbyListUpdateAction.CLOSED
+                event.getLobbyStatus() == GameLobby.LobbyStatus.ACTIVE
+                    ? LobbyListUpdateAction.STARTED
+                    : LobbyListUpdateAction.CLOSED
         ));
     }
-
     @EventListener(value = LobbyListUpdateEvent.class, condition = "#event.action == T(net.kravuar.shmanchkin.domain.model.gameLobby.LobbyListUpdateAction).CREATED")
     protected void scheduleAutoClose(LobbyListUpdateEvent event) {
         scheduleAutoClose(event.getGameLobby());

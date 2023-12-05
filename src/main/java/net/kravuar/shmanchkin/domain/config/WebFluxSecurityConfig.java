@@ -4,7 +4,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import net.kravuar.shmanchkin.application.services.AuthService;
-import net.kravuar.shmanchkin.application.services.GameService;
+import net.kravuar.shmanchkin.application.services.GameLobbyService;
 import net.kravuar.shmanchkin.domain.model.account.UserInfo;
 import net.kravuar.shmanchkin.domain.security.JWTExtractor;
 import net.kravuar.shmanchkin.domain.security.PrincipalExtractor;
@@ -25,7 +25,7 @@ import java.util.UUID;
 @Configuration
 @RequiredArgsConstructor
 public class WebFluxSecurityConfig {
-    private final GameService gameService;
+    private final GameLobbyService gameLobbyService;
 
     @Value("classpath:${web.jwt.publicKeyResource}")
     private Resource publicKeyResource;
@@ -65,7 +65,7 @@ public class WebFluxSecurityConfig {
     public PrincipalExtractor principalExtractor() {
         return decodedJWT -> {
             var uuid = UUID.fromString(decodedJWT.getClaim(AuthService.UUID_CLAIM).asString());
-            var user = gameService.getActiveUser(uuid);
+            var user = gameLobbyService.getActiveUser(uuid);
             return user == null
                     ? new UserInfo(uuid, decodedJWT.getSubject())
                     : user;

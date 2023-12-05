@@ -7,10 +7,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
-import net.kravuar.shmanchkin.application.services.GameService;
+import net.kravuar.shmanchkin.application.services.GameLobbyService;
+import net.kravuar.shmanchkin.domain.model.dto.FullLobbyDTO;
 import net.kravuar.shmanchkin.domain.model.dto.GameFormDTO;
-import net.kravuar.shmanchkin.domain.model.dto.LobbyDTO;
-import net.kravuar.shmanchkin.domain.model.dto.events.*;
+import net.kravuar.shmanchkin.domain.model.dto.events.EventDTO;
+import net.kravuar.shmanchkin.domain.model.dto.events.gameLobby.*;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.validation.annotation.Validated;
@@ -22,8 +23,8 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/games")
 @RequiredArgsConstructor
 @Validated
-public class GameController {
-    private final GameService gameService;
+public class GameLobbyController {
+    private final GameLobbyService gameLobbyService;
 
     @Operation(
             summary = "Список игр.",
@@ -33,8 +34,8 @@ public class GameController {
             @ApiResponse(responseCode = "200", description = "Список игр получен."),
     })
     @GetMapping
-    public Flux<LobbyDTO> lobbyList() {
-        return gameService.getLobbyList();
+    public Flux<FullLobbyDTO> lobbyList() {
+        return gameLobbyService.getLobbyList();
     }
 
     @Operation(
@@ -51,14 +52,14 @@ public class GameController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Поток открыт.",
                     content = @Content(schema = @Schema(anyOf = {
-                            GameListUpdateDTO.class,
-                            GameListFullUpdateDTO.class
+                            LobbyListUpdateDTO.class,
+                            LobbyListFullUpdateDTO.class
                     }))
             )
     })
     @GetMapping("/subscribe")
     public Flux<ServerSentEvent<EventDTO>> subscribeToLobbyListUpdates() {
-        return gameService.subscribeToLobbyListUpdates();
+        return gameLobbyService.subscribeToLobbyListUpdates();
     }
 
     @Operation(
@@ -71,7 +72,7 @@ public class GameController {
     })
     @PostMapping("/create")
     public Mono<Void> createLobby(@RequestBody GameFormDTO gameForm) {
-        return gameService.createGame(gameForm);
+        return gameLobbyService.createGame(gameForm);
     }
 
     //    TODO: Переподключение
@@ -98,16 +99,15 @@ public class GameController {
                     content = @Content(schema = @Schema(anyOf = {
                             MessageDTO.class,
                             LobbyStatusChangedDTO.class,
-                            LobbyUpdateDTO.class,
-                            LobbyFullUpdateDTO.class,
-                            KickedDTO.class
+                            LobbyPlayersUpdateDTO.class,
+                            LobbyPlayersFullUpdateDTO.class,
                     }))
             ),
             @ApiResponse(responseCode = "400", description = "Невозможно подключиться к игре. Игра не найдена, либо пользователь уже в игре, либо игра заполнена, либо имя игрока уже занято, либо игра уже начата."),
     })
     @GetMapping("/join/{lobbyName}")
     public Flux<ServerSentEvent<EventDTO>> joinLobby(@PathVariable String lobbyName) {
-        return gameService.joinGame(lobbyName);
+        return gameLobbyService.joinGame(lobbyName);
     }
 
     @Operation(
@@ -121,7 +121,7 @@ public class GameController {
     })
     @DeleteMapping("/close")
     public Mono<Void> closeGame() {
-        return gameService.closeGame();
+        return gameLobbyService.closeGame();
     }
 
     @Operation(
@@ -135,7 +135,7 @@ public class GameController {
     })
     @PutMapping("/start")
     public Mono<Void> startGame() {
-        return gameService.startGame();
+        return gameLobbyService.startGame();
     }
 
     @Operation(
@@ -148,7 +148,7 @@ public class GameController {
     })
     @PostMapping("/sendMessage")
     public Mono<Void> sendMessage(@RequestBody @NotBlank @Length(min = 1) String message) {
-        return gameService.sendMessage(message);
+        return gameLobbyService.sendMessage(message);
     }
 
     @Operation(
@@ -162,7 +162,7 @@ public class GameController {
     })
     @PutMapping("/kickPlayer")
     public Mono<Void> kickPlayer(String username) {
-        return gameService.kickPlayer(username);
+        return gameLobbyService.kickPlayer(username);
     }
 
     @Operation(
@@ -174,7 +174,7 @@ public class GameController {
     })
     @PutMapping("/leave")
     public Mono<Void> leave() {
-        return gameService.leaveGame();
+        return gameLobbyService.leaveGame();
     }
 
     @Operation(
@@ -186,7 +186,7 @@ public class GameController {
             @ApiResponse(responseCode = "400", description = "Не в игре."),
     })
     @GetMapping("/info")
-    public Mono<LobbyDTO> getLobbyInfo() {
-        return gameService.getLobbyInfo();
+    public Mono<FullLobbyDTO> getLobbyInfo() {
+        return gameLobbyService.getLobbyInfo();
     }
 }

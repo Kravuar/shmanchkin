@@ -18,8 +18,6 @@ public class GameSubscription implements MessageHandler {
     private final GameLobby gameLobby;
     @NonNull
     private final FluxSink<ServerSentEvent<EventDTO>> sink;
-    @NonNull
-    private final MessageHandler messageHandler;
 
     public void toIdle() {
         this.sink.complete();
@@ -27,6 +25,11 @@ public class GameSubscription implements MessageHandler {
 
     @Override
     public void handleMessage(@NonNull Message<?> message) throws MessagingException {
-        messageHandler.handleMessage(message);
+        var gameEvent = (EventDTO) message.getPayload();
+        var event = ServerSentEvent.<EventDTO>builder()
+                .event(gameEvent.getEventType())
+                .data(gameEvent)
+                .build();
+        sink.next(event);
     }
 }
