@@ -2,10 +2,10 @@ package net.kravuar.shmanchkin.domain.model.gameLobby;
 
 import lombok.Getter;
 import net.kravuar.shmanchkin.domain.model.account.UserInfo;
-import net.kravuar.shmanchkin.domain.model.exceptions.GameIsFullException;
-import net.kravuar.shmanchkin.domain.model.exceptions.IllegalLobbyStatusException;
-import net.kravuar.shmanchkin.domain.model.exceptions.NotEnoughPlayersException;
-import net.kravuar.shmanchkin.domain.model.exceptions.UsernameTakenException;
+import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.GameLobbyIsFullException;
+import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.IllegalLobbyStatusException;
+import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.NotEnoughPlayersInLobbyException;
+import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.UsernameTakenException;
 import net.kravuar.shmanchkin.domain.model.game.Game;
 import net.kravuar.shmanchkin.domain.model.game.character.CharacterImpl;
 
@@ -17,10 +17,13 @@ public class GameLobby {
         ACTIVE,
         CLOSED
     }
+    @Getter
     private final int minPlayers;
+    @Getter
     private final int maxPlayers;
 
-    private final Game game;
+    @Getter
+    protected final Game game;
     @Getter
     private final String lobbyName;
     @Getter
@@ -34,7 +37,14 @@ public class GameLobby {
         this.maxPlayers = maxPlayers;
         this.lobbyName = lobbyName;
         this.owner = owner;
-        this.game = new Game(lobbyName);
+        this.game = new Game();
+    }
+    public GameLobby(String lobbyName, UserInfo owner, int minPlayers, int maxPlayers, Game game) {
+        this.minPlayers = minPlayers;
+        this.maxPlayers = maxPlayers;
+        this.lobbyName = lobbyName;
+        this.owner = owner;
+        this.game = game;
     }
 
     public Collection<UserInfo> getPlayers() {
@@ -55,7 +65,7 @@ public class GameLobby {
 
     public synchronized void addPlayer(UserInfo player) {
         if (isFull())
-            throw new GameIsFullException(lobbyName);
+            throw new GameLobbyIsFullException(lobbyName);
         if (lobbyStatus == LobbyStatus.ACTIVE)
             throw new IllegalLobbyStatusException(lobbyName, LobbyStatus.ACTIVE);
         var usernameTaken = playersJoined.values().stream()
@@ -78,7 +88,7 @@ public class GameLobby {
         if (lobbyStatus != LobbyStatus.IDLE)
             throw new IllegalLobbyStatusException(lobbyName, lobbyStatus);
         if (playersJoined.size() < minPlayers)
-            throw new NotEnoughPlayersException(lobbyName, minPlayers - playersJoined.size());
+            throw new NotEnoughPlayersInLobbyException(lobbyName, minPlayers - playersJoined.size());
         lobbyStatus = LobbyStatus.ACTIVE;
         game.start();
     }

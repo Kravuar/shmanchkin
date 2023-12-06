@@ -2,13 +2,12 @@ package net.kravuar.shmanchkin.domain.model.events.gameLobby;
 
 import lombok.Getter;
 import net.kravuar.shmanchkin.domain.model.account.UserInfo;
-import net.kravuar.shmanchkin.domain.model.events.GameEvent;
 import net.kravuar.shmanchkin.domain.model.gameLobby.GameLobby;
 
 import java.time.ZonedDateTime;
 
 @Getter
-public class MessageEvent extends GameEvent {
+public class MessageEvent extends GameLobbyEvent {
     private final String message;
     private final UserInfo sender;
     private final ZonedDateTime timestamp;

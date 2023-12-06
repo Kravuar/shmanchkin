@@ -1,19 +1,33 @@
 package net.kravuar.shmanchkin.domain.model.game;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import net.kravuar.shmanchkin.domain.model.exceptions.game.IllegalGameStageException;
 import net.kravuar.shmanchkin.domain.model.game.character.Character;
-import org.springframework.integration.dsl.MessageChannels;
-import org.springframework.messaging.SubscribableChannel;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@RequiredArgsConstructor
 public class Game {
-    private final SubscribableChannel channel;
-    private final Map<String, Character> characters = new HashMap<>();
-    private Stage stage = Stage.PREPARATION;
+//    TODO: create gameLoopManagingWrapper with scheduling.
+    public enum Stage {
+        IDLE,
+        DEALING,
+        START,
+        PRE_BATTLE,
+        BATTLE,
+        POST_BATTLE,
+        END,
+        FINISHED
+    }
 
-    public Game(String name) {
-        this.channel = MessageChannels.publishSubscribe(name).getObject();
+    private final Map<String, Character> characters = new HashMap<>();
+    @Getter
+    protected Stage stage = Stage.IDLE;
+
+    public Character getCharacter(String name) {
+        return characters.get(name);
     }
 
     public void addCharacter(String name, Character character) {
@@ -25,15 +39,27 @@ public class Game {
     }
 
     public void start() {
-//        TODO: Other game init stuff
+        if (stage != Stage.IDLE)
+            throw new IllegalGameStageException(stage);
+        advanceGameLoop();
     }
 
-    public enum Stage {
-        PREPARATION,
-        START,
-        PRE_BATTLE,
-        BATTLE,
-        POST_BATTLE,
-        END
+    public void advanceGameLoop() {
+        switch (stage) {
+            case IDLE -> {
+                stage = Stage.DEALING;
+                dealCards();
+            }
+            default -> System.out.println("TBD");
+        }
+    }
+
+    private void dealCards() {
+        System.out.println("DEALING");
+    }
+
+//    TODO: return dice throw result or smth
+    public boolean escape(Character character) {
+        return false;
     }
 }

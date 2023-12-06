@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import net.kravuar.shmanchkin.domain.model.dto.events.EventDTO;
-import net.kravuar.shmanchkin.domain.model.exceptions.UserIsIdleException;
+import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.UserIsIdleException;
 import net.kravuar.shmanchkin.domain.model.game.character.Character;
 import org.springframework.messaging.support.GenericMessage;
 
@@ -36,8 +36,8 @@ public class UserInfo {
     public Character getCharacter() {
         if (isIdle())
             throw new UserIsIdleException();
-//      TODO: return from GameLobby.Game.characterList
-        return null;
+        var game = subscription.getGameLobby().getGame();
+        return game.getCharacter(username);
     }
 
     public void send(EventDTO eventMessage) {

@@ -75,7 +75,6 @@ public class GameLobbyController {
         return gameLobbyService.createGame(gameForm);
     }
 
-    //    TODO: Переподключение
     @Operation(
             summary = "Подключение к лобби.",
             description = """

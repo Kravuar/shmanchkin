@@ -2,9 +2,12 @@ package net.kravuar.shmanchkin.domain.model.gameLobby;
 
 import lombok.NonNull;
 import net.kravuar.shmanchkin.domain.model.account.UserInfo;
-import net.kravuar.shmanchkin.domain.model.events.GameEvent;
+import net.kravuar.shmanchkin.domain.model.events.game.GameEvent;
+import net.kravuar.shmanchkin.domain.model.events.game.GameLobbyAwareGameEvent;
+import net.kravuar.shmanchkin.domain.model.events.gameLobby.GameLobbyEvent;
 import net.kravuar.shmanchkin.domain.model.events.gameLobby.LobbyStatusChangedEvent;
 import net.kravuar.shmanchkin.domain.model.events.gameLobby.PlayerLobbyUpdateEvent;
+import net.kravuar.shmanchkin.domain.model.game.SubscribableGame;
 import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
@@ -15,8 +18,14 @@ public class SubscribableGameLobby extends GameLobby implements SubscribableChan
     private final SubscribableChannel channel;
 
     public SubscribableGameLobby(String lobbyName, UserInfo owner, int minPlayers, int maxPlayers) {
-        super(lobbyName, owner, minPlayers, maxPlayers);
+        super(lobbyName, owner, minPlayers, maxPlayers, new SubscribableGame(lobbyName));
         this.channel = MessageChannels.publishSubscribe(lobbyName).getObject();
+        MessageHandler wrappingMessageHandler = message -> {
+            var gameEvent = (GameEvent) message.getPayload();
+            var wrapped = new GameLobbyAwareGameEvent<>(this, gameEvent);
+            channel.send(new GenericMessage<>(wrapped));
+        };
+        ((SubscribableGame) this.game).subscribe(wrappingMessageHandler);
     }
 
     @Override
@@ -50,8 +59,8 @@ public class SubscribableGameLobby extends GameLobby implements SubscribableChan
         send(new LobbyStatusChangedEvent(this, LobbyStatus.CLOSED));
     }
 
-    private void send(GameEvent gameEvent) {
-        channel.send(new GenericMessage<>(gameEvent));
+    private void send(GameLobbyEvent gameLobbyEvent) {
+        channel.send(new GenericMessage<>(gameLobbyEvent));
     }
 
     @Override

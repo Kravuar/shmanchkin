@@ -29,6 +29,4 @@ public class CharacterImpl implements Character {
                 .mapToInt(Wearable::getBonus)
                 .sum();
     }
-
-    ;
 }

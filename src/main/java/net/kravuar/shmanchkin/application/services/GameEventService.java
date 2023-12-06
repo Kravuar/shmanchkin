@@ -1,7 +1,7 @@
 package net.kravuar.shmanchkin.application.services;
 
 import lombok.RequiredArgsConstructor;
-import net.kravuar.shmanchkin.domain.model.events.GameEvent;
+import net.kravuar.shmanchkin.domain.model.events.gameLobby.GameLobbyEvent;
 import net.kravuar.shmanchkin.domain.model.gameLobby.SubscribableGameLobby;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.Message;
@@ -22,13 +22,13 @@ public class GameEventService implements MessageHandler {
         gameLobby.unsubscribe(this);
     }
 
-    public void publishGameEvent(GameEvent gameEvent) {
-        publisher.publishEvent(gameEvent);
+    public void publishGameLobbyEvent(GameLobbyEvent gameLobbyEvent) {
+        publisher.publishEvent(gameLobbyEvent);
     }
 
     @Override
     public void handleMessage(Message<?> gameEventMessage) throws MessagingException {
-        var gameEvent = (GameEvent) gameEventMessage.getPayload();
+        var gameEvent = (GameLobbyEvent) gameEventMessage.getPayload();
         publisher.publishEvent(gameEvent);
     }
 }

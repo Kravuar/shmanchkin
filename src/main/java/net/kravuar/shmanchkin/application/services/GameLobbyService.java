@@ -13,7 +13,7 @@ import net.kravuar.shmanchkin.domain.model.events.gameLobby.LobbyListUpdateEvent
 import net.kravuar.shmanchkin.domain.model.events.gameLobby.LobbyStatusChangedEvent;
 import net.kravuar.shmanchkin.domain.model.events.gameLobby.MessageEvent;
 import net.kravuar.shmanchkin.domain.model.events.gameLobby.PlayerLobbyUpdateEvent;
-import net.kravuar.shmanchkin.domain.model.exceptions.*;
+import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.*;
 import net.kravuar.shmanchkin.domain.model.gameLobby.GameLobby;
 import net.kravuar.shmanchkin.domain.model.gameLobby.LobbyListUpdateAction;
 import net.kravuar.shmanchkin.domain.model.gameLobby.SubscribableGameLobby;
@@ -75,7 +75,7 @@ public class GameLobbyService {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
                     if (!currentUser.isIdle())
-                        return Mono.error(new AlreadyInGameException(currentUser.getSubscription().getGameLobby().getLobbyName()));
+                        return Mono.error(new AlreadyInGameLobbyException(currentUser.getSubscription().getGameLobby().getLobbyName()));
                     var game = new SubscribableGameLobby(
                         gameForm.getLobbyName(),
                         currentUser,
@@ -87,10 +87,10 @@ public class GameLobbyService {
                             game
                     );
                     if (previousGame != null)
-                        return Mono.error(new GameAlreadyExistsException(previousGame.getLobbyName()));
+                        return Mono.error(new GameLobbyAlreadyExistsException(previousGame.getLobbyName()));
 
                     gameEventService.addGameLobby(game);
-                    gameEventService.publishGameEvent(
+                    gameEventService.publishGameLobbyEvent(
                         new LobbyListUpdateEvent(
                             game,
                             LobbyListUpdateAction.CREATED
@@ -103,11 +103,11 @@ public class GameLobbyService {
         return userService.getCurrentUser()
                 .flatMapMany(currentUser -> {
                     if (!currentUser.isIdle())
-                        return Flux.error(new AlreadyInGameException(currentUser.getSubscription().getGameLobby().getLobbyName()));
+                        return Flux.error(new AlreadyInGameLobbyException(currentUser.getSubscription().getGameLobby().getLobbyName()));
 
                     var gameLobby = games.get(lobbyName);
                     if (gameLobby == null)
-                        return Flux.error(new GameNotFoundException(lobbyName));
+                        return Flux.error(new GameLobbyNotFoundException(lobbyName));
 
                     return Flux.create(sink -> {
                         try {
@@ -141,7 +141,7 @@ public class GameLobbyService {
                         return Mono.error(new UserIsIdleException());
                     var gameLobby = currentUser.getSubscription().getGameLobby();
                     if (!Objects.equals(gameLobby.getOwner(), currentUser))
-                        return Mono.error(new ForbiddenActionException(gameLobby.getLobbyName(), "Выгнать игрока"));
+                        return Mono.error(new ForbiddenActionLobbyException(gameLobby.getLobbyName(), "Выгнать игрока"));
                     var player = gameLobby.getPlayer(username);
                     if (player == null)
                         return Mono.error(new PlayerNotFoundException(gameLobby.getLobbyName(), username));
@@ -157,7 +157,7 @@ public class GameLobbyService {
                         return Mono.error(new UserIsIdleException());
                     var gameLobby = currentUser.getSubscription().getGameLobby();
                     if (!Objects.equals(gameLobby.getOwner(), currentUser))
-                        return Mono.error(new ForbiddenActionException(gameLobby.getLobbyName(), "Начать игру"));
+                        return Mono.error(new ForbiddenActionLobbyException(gameLobby.getLobbyName(), "Начать игру"));
                     gameLobby.start();
                     return Mono.empty();
                 });
@@ -169,7 +169,7 @@ public class GameLobbyService {
                         return Mono.error(new UserIsIdleException("Нет созданной игры."));
                     var gameLobby = currentUser.getSubscription().getGameLobby();
                     if (!Objects.equals(gameLobby.getOwner(), currentUser))
-                        return Mono.error(new ForbiddenActionException(gameLobby.getLobbyName(), "Закрыть игру"));
+                        return Mono.error(new ForbiddenActionLobbyException(gameLobby.getLobbyName(), "Закрыть игру"));
                     games.remove(gameLobby.getLobbyName());
                     gameLobby.close();
                     return Mono.empty();
@@ -182,7 +182,7 @@ public class GameLobbyService {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
                     else {
-                        gameEventService.publishGameEvent(
+                        gameEventService.publishGameLobbyEvent(
                             new MessageEvent(
                                 currentUser.getSubscription().getGameLobby(),
                                 message,

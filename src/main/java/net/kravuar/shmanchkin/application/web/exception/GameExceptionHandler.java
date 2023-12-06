@@ -3,9 +3,10 @@ package net.kravuar.shmanchkin.application.web.exception;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
-import net.kravuar.shmanchkin.domain.model.exceptions.ForbiddenActionException;
-import net.kravuar.shmanchkin.domain.model.exceptions.GameException;
-import net.kravuar.shmanchkin.domain.model.exceptions.UserIsIdleException;
+import lombok.extern.slf4j.Slf4j;
+import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.ForbiddenActionLobbyException;
+import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.GameLobbyException;
+import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.UserIsIdleException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -16,10 +17,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.List;
 
 @RestControllerAdvice
+@Slf4j
 public class GameExceptionHandler {
-    @ExceptionHandler(ForbiddenActionException.class)
+    @ExceptionHandler(ForbiddenActionLobbyException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    public String gameExceptionHandler(ForbiddenActionException exception) {
+    public String gameExceptionHandler(ForbiddenActionLobbyException exception) {
         return exception.getMessage();
     }
 
@@ -57,15 +59,16 @@ public class GameExceptionHandler {
                 .toList();
     }
 
-    @ExceptionHandler(GameException.class)
+    @ExceptionHandler(GameLobbyException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String gameExceptionHandler(GameException exception) {
+    public String gameExceptionHandler(GameLobbyException exception) {
         return exception.getMessage();
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String otherExceptionHandler(Exception exception) {
+        log.error(exception.getMessage(), exception);
         return exception.getMessage();
     }
 }

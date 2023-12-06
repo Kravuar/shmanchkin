@@ -1,4 +1,4 @@
-package net.kravuar.shmanchkin.domain.model.exceptions;
+package net.kravuar.shmanchkin.domain.model.exceptions.gameLobby;
 
 import lombok.Getter;
 

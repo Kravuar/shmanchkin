@@ -1,12 +1,12 @@
-package net.kravuar.shmanchkin.domain.model.exceptions;
+package net.kravuar.shmanchkin.domain.model.exceptions.gameLobby;
 
 import lombok.Getter;
 
 @Getter
-public class ForbiddenActionException extends GameException {
+public class ForbiddenActionLobbyException extends GameLobbyException {
     private final String action;
 
-    public ForbiddenActionException(String lobbyName, String action) {
+    public ForbiddenActionLobbyException(String lobbyName, String action) {
         super(lobbyName, "Вы не можете совершить действие '" + action + "' в лобби " + lobbyName + ".");
         this.action = action;
     }
