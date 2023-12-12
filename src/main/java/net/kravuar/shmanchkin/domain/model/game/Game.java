@@ -40,10 +40,10 @@ public class Game {
         currentTurnCharacter = getNextCharacter();
         isActive = true;
     }
+
     public void endTurn() {
 
     }
-
     public boolean escapeBattle(Character character) {
 //    TODO: return dice throw result or smth
         return false;

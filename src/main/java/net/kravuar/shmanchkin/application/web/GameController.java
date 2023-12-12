@@ -30,14 +30,42 @@ public class GameController {
         return gameService.startGame();
     }
 
+    @Operation(
+            summary = "Сбежать из битвы.",
+            description = "Осуществляет попытку к бегству, если возможно."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Попытка осуществлена, получен результат попытки."),
+            @ApiResponse(responseCode = "400", description = "Невозможно запустить игру. Пользователь не в игре или не в битве.")
+    })
     @PostMapping("/attemptEscape")
     public Mono<Boolean> attemptEscape() {
         return gameService.escapeBattle();
     }
 
+    @Operation(
+            summary = "Сыграть карту.",
+            description = "Использует карту в игре."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Карта использована."),
+            @ApiResponse(responseCode = "400", description = "Невозможно использовать карту. Пользователь не в игре или сейчас неподходящий момент для использования карты.")
+    })
     @PostMapping("/playCard")
     public Mono<Void> playCard(@RequestBody int inHandCardPosition) {
         return gameService.playCard(inHandCardPosition);
     }
 
+    @Operation(
+            summary = "Закончить ход.",
+            description = "Заканчивает ход, передаёт ход следующему игроку."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Ход закончен."),
+            @ApiResponse(responseCode = "400", description = "Невозможно запустить игру. Пользователь не в игре или сейчас не его ход.")
+    })
+    @PostMapping("/endTurn")
+    public Mono<Void> endTurn() {
+        return gameService.endTurn();
+    }
 }

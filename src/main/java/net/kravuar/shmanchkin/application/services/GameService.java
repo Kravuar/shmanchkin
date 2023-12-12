@@ -29,10 +29,7 @@ public class GameService {
                     return Mono.empty();
                 });
     }
-    public Mono<Void> cancelGame() {
 
-        return Mono.empty();
-    }
     public Mono<Void> endTurn() {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
@@ -49,7 +46,6 @@ public class GameService {
                     return Mono.empty();
                 });
     }
-
     public Mono<Boolean> escapeBattle() {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
@@ -64,7 +60,6 @@ public class GameService {
                     return Mono.just(game.escapeBattle(character));
                 });
     }
-
     public Mono<Void> playCard(int inHandCardPosition) {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
