@@ -58,4 +58,24 @@ public class CharacterBattleWrapper implements Character {
     public Collection<Curse> getActiveCurses() {
         return character.getActiveCurses();
     }
+
+    @Override
+    public void addCardToHand(Card card) {
+        character.addCardToHand(card);
+    }
+
+    @Override
+    public void equip(Wearable equipment) {
+        character.equip(equipment);
+    }
+
+    @Override
+    public void unequip(Wearable equipment) {
+        character.unequip(equipment);
+    }
+
+    @Override
+    public void addCurse(Curse curse) {
+        character.addCurse(curse);
+    }
 }

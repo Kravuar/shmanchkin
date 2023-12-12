@@ -20,14 +20,14 @@ public class SubscribableGame extends Game implements SubscribableChannel {
     }
 
     @Override
-    public void advanceGameLoop() {
-        super.advanceGameLoop();
-        send(new GameStageChangedEvent(this, stage));
+    public void advanceTurnStage() {
+        super.advanceTurnStage();
+        send(new GameStageChangedEvent(this, turnStage));
     }
 
     @Override
-    public boolean escape(Character character) {
-        var result = super.escape(character);
+    public boolean escapeBattle(Character character) {
+        var result = super.escapeBattle(character);
         send(new EscapeAttemptedEvent(this, character, result));
         return result;
     }
