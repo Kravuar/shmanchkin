@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import net.kravuar.shmanchkin.application.services.GameLobbyService;
 import net.kravuar.shmanchkin.domain.model.dto.FullLobbyDTO;
-import net.kravuar.shmanchkin.domain.model.dto.GameFormDTO;
+import net.kravuar.shmanchkin.domain.model.dto.GameLobbyFormDTO;
 import net.kravuar.shmanchkin.domain.model.dto.events.EventDTO;
 import net.kravuar.shmanchkin.domain.model.dto.events.gameLobby.*;
 import org.hibernate.validator.constraints.Length;
@@ -71,8 +71,8 @@ public class GameLobbyController {
             @ApiResponse(responseCode = "400", description = "Невозможно создать игру. Пользователь уже в игре или имя игры уже занято."),
     })
     @PostMapping("/create")
-    public Mono<Void> createLobby(@RequestBody GameFormDTO gameForm) {
-        return gameLobbyService.createGame(gameForm);
+    public Mono<Void> createLobby(@RequestBody GameLobbyFormDTO gameForm) {
+        return gameLobbyService.createGameLobby(gameForm);
     }
 
     @Operation(
@@ -106,7 +106,7 @@ public class GameLobbyController {
     })
     @GetMapping("/join/{lobbyName}")
     public Flux<ServerSentEvent<EventDTO>> joinLobby(@PathVariable String lobbyName) {
-        return gameLobbyService.joinGame(lobbyName);
+        return gameLobbyService.joinGameLobby(lobbyName);
     }
 
     @Operation(
@@ -120,21 +120,7 @@ public class GameLobbyController {
     })
     @DeleteMapping("/close")
     public Mono<Void> closeGame() {
-        return gameLobbyService.closeGame();
-    }
-
-    @Operation(
-            summary = "Старт лобби.",
-            description = "Запускает игру. Нужно быть хостом."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Игра запущена."),
-            @ApiResponse(responseCode = "400", description = "Невозможно запустить игру. Пользователь не в игре или игра уже запущена."),
-            @ApiResponse(responseCode = "403", description = "Невозможно запустить игру. Пользователь не хост."),
-    })
-    @PutMapping("/start")
-    public Mono<Void> startGame() {
-        return gameLobbyService.startGame();
+        return gameLobbyService.closeCurrentGameLobby();
     }
 
     @Operation(
@@ -161,7 +147,7 @@ public class GameLobbyController {
     })
     @PutMapping("/kickPlayer")
     public Mono<Void> kickPlayer(String username) {
-        return gameLobbyService.kickPlayer(username);
+        return gameLobbyService.kickPlayerFromCurrentLobby(username);
     }
 
     @Operation(
@@ -173,7 +159,7 @@ public class GameLobbyController {
     })
     @PutMapping("/leave")
     public Mono<Void> leave() {
-        return gameLobbyService.leaveGame();
+        return gameLobbyService.leaveGameLobby();
     }
 
     @Operation(

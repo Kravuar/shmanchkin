@@ -4,7 +4,7 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
-import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.ForbiddenActionLobbyException;
+import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.ForbiddenLobbyActionException;
 import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.GameLobbyException;
 import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.UserIsIdleException;
 import org.springframework.http.HttpStatus;
@@ -19,9 +19,9 @@ import java.util.List;
 @RestControllerAdvice
 @Slf4j
 public class GameExceptionHandler {
-    @ExceptionHandler(ForbiddenActionLobbyException.class)
+    @ExceptionHandler(ForbiddenLobbyActionException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    public String gameExceptionHandler(ForbiddenActionLobbyException exception) {
+    public String gameExceptionHandler(ForbiddenLobbyActionException exception) {
         return exception.getMessage();
     }
 

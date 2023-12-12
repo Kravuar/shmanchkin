@@ -10,9 +10,10 @@ import net.kravuar.shmanchkin.domain.model.game.cards.treasure.Wearable;
 import java.util.Collection;
 import java.util.LinkedList;
 
+// TODO: Having an interface and Impl is bad
 @Getter
 public class CharacterImpl implements Character {
-    //    TODO: externalize default values?
+    //    TODO: externalize this values?
     private int level = 1;
     private int maxCards = 6;
 

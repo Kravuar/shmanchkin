@@ -6,7 +6,7 @@ import net.kravuar.shmanchkin.application.props.GameProps;
 import net.kravuar.shmanchkin.domain.model.account.GameSubscription;
 import net.kravuar.shmanchkin.domain.model.account.UserInfo;
 import net.kravuar.shmanchkin.domain.model.dto.FullLobbyDTO;
-import net.kravuar.shmanchkin.domain.model.dto.GameFormDTO;
+import net.kravuar.shmanchkin.domain.model.dto.GameLobbyFormDTO;
 import net.kravuar.shmanchkin.domain.model.dto.events.EventDTO;
 import net.kravuar.shmanchkin.domain.model.dto.events.gameLobby.*;
 import net.kravuar.shmanchkin.domain.model.events.gameLobby.LobbyListUpdateEvent;
@@ -39,22 +39,20 @@ import java.util.concurrent.*;
 @Service
 @Validated
 public class GameLobbyService {
-    private final UserService userService;
     private final GameProps gameProps;
+    private final UserService userService;
     private final GameEventService gameEventService;
-    private final Map<String, GameLobby> games = new ConcurrentHashMap<>();
-    private final Map<String, ScheduledFuture<?>> autoCloseTasks = new ConcurrentHashMap<>();
-    private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+    private final Map<String, GameLobby> lobbies = new ConcurrentHashMap<>();
     private final SubscribableChannel gameListChannel = MessageChannels
             .publishSubscribe("GameListChannel")
             .getObject();
 
     public Flux<FullLobbyDTO> getLobbyList() {
-        return Flux.fromIterable(games.values())
+        return Flux.fromIterable(lobbies.values())
                 .map(FullLobbyDTO::new);
     }
     public Map<String, GameLobby> getLobbies() {
-        return Collections.unmodifiableMap(games);
+        return Collections.unmodifiableMap(lobbies);
     }
     public Flux<ServerSentEvent<EventDTO>> subscribeToLobbyListUpdates() {
         return Flux.create(sink -> {
@@ -71,41 +69,41 @@ public class GameLobbyService {
         }, FluxSink.OverflowStrategy.LATEST);
     }
 
-    public Mono<Void> createGame(GameFormDTO gameForm) {
+    public Mono<Void> createGameLobby(GameLobbyFormDTO gameLobbyForm) {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
                     if (!currentUser.isIdle())
                         return Mono.error(new AlreadyInGameLobbyException(currentUser.getSubscription().getGameLobby().getLobbyName()));
-                    var game = new SubscribableGameLobby(
-                        gameForm.getLobbyName(),
+                    var gameLobby = new SubscribableGameLobby(
+                        gameLobbyForm.getLobbyName(),
                         currentUser,
                         gameProps.getLobbyMinPlayers(),
                         gameProps.getLobbyMaxPlayers()
                     );
-                    var previousGame = games.putIfAbsent(
-                            gameForm.getLobbyName(),
-                            game
+                    var previousGame = lobbies.putIfAbsent(
+                            gameLobbyForm.getLobbyName(),
+                            gameLobby
                     );
                     if (previousGame != null)
                         return Mono.error(new GameLobbyAlreadyExistsException(previousGame.getLobbyName()));
 
-                    gameEventService.addGameLobby(game);
+                    gameEventService.addGameLobby(gameLobby);
                     gameEventService.publishGameLobbyEvent(
                         new LobbyListUpdateEvent(
-                            game,
+                            gameLobby,
                             LobbyListUpdateAction.CREATED
                         )
                     );
                     return Mono.empty();
                 });
     }
-    public Flux<ServerSentEvent<EventDTO>> joinGame(String lobbyName) {
+    public Flux<ServerSentEvent<EventDTO>> joinGameLobby(String lobbyName) {
         return userService.getCurrentUser()
                 .flatMapMany(currentUser -> {
                     if (!currentUser.isIdle())
                         return Flux.error(new AlreadyInGameLobbyException(currentUser.getSubscription().getGameLobby().getLobbyName()));
 
-                    var gameLobby = games.get(lobbyName);
+                    var gameLobby = lobbies.get(lobbyName);
                     if (gameLobby == null)
                         return Flux.error(new GameLobbyNotFoundException(lobbyName));
 
@@ -124,7 +122,7 @@ public class GameLobbyService {
                     }, FluxSink.OverflowStrategy.LATEST);
                 });
     }
-    public Mono<Void> leaveGame() {
+    public Mono<Void> leaveGameLobby() {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
                     if (currentUser.isIdle())
@@ -134,14 +132,14 @@ public class GameLobbyService {
                     return Mono.empty();
                 });
     }
-    public Mono<Void> kickPlayer(String username) {
+    public Mono<Void> kickPlayerFromCurrentLobby(String username) {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
                     var gameLobby = currentUser.getSubscription().getGameLobby();
                     if (!Objects.equals(gameLobby.getOwner(), currentUser))
-                        return Mono.error(new ForbiddenActionLobbyException(gameLobby.getLobbyName(), "Выгнать игрока"));
+                        return Mono.error(new ForbiddenLobbyActionException(gameLobby.getLobbyName(), "Выгнать игрока"));
                     var player = gameLobby.getPlayer(username);
                     if (player == null)
                         return Mono.error(new PlayerNotFoundException(gameLobby.getLobbyName(), username));
@@ -150,30 +148,21 @@ public class GameLobbyService {
                 });
     }
 
-    public Mono<Void> startGame() {
-        return userService.getCurrentUser()
-                .flatMap(currentUser -> {
-                    if (currentUser.isIdle())
-                        return Mono.error(new UserIsIdleException());
-                    var gameLobby = currentUser.getSubscription().getGameLobby();
-                    if (!Objects.equals(gameLobby.getOwner(), currentUser))
-                        return Mono.error(new ForbiddenActionLobbyException(gameLobby.getLobbyName(), "Начать игру"));
-                    gameLobby.start();
-                    return Mono.empty();
-                });
-    }
-    public Mono<Void> closeGame() {
+    public Mono<Void> closeCurrentGameLobby() {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException("Нет созданной игры."));
                     var gameLobby = currentUser.getSubscription().getGameLobby();
                     if (!Objects.equals(gameLobby.getOwner(), currentUser))
-                        return Mono.error(new ForbiddenActionLobbyException(gameLobby.getLobbyName(), "Закрыть игру"));
-                    games.remove(gameLobby.getLobbyName());
-                    gameLobby.close();
-                    return Mono.empty();
+                        return Mono.error(new ForbiddenLobbyActionException(gameLobby.getLobbyName(), "Закрыть игру"));
+                    return close(gameLobby);
                 });
+    }
+    public Mono<Void> close(GameLobby gameLobby) {
+        lobbies.remove(gameLobby.getLobbyName());
+        gameLobby.close();
+        return Mono.empty();
     }
 
     public Mono<Void> sendMessage(String message) {
@@ -216,36 +205,7 @@ public class GameLobbyService {
         return user;
     }
 
-    private void scheduleAutoClose(GameLobby gameLobby) {
-        var lobbyName = gameLobby.getLobbyName();
-        var autoCloseTask = executorService.schedule(
-                () -> {
-                    games.remove(lobbyName);
-                    gameLobby.close();
-                    autoCloseTasks.remove(lobbyName);
-                },
-                gameProps.getAutoCloseTimeout(),
-                TimeUnit.SECONDS
-        );
-        autoCloseTasks.put(lobbyName, autoCloseTask);
-    }
-    private void cancelAutoClose(GameLobby gameLobby) {
-        var task = autoCloseTasks.get(gameLobby.getLobbyName());
-        if (task != null)
-            task.cancel(false);
-    }
-
 //    Order matters
-    @EventListener(value = PlayerLobbyUpdateEvent.class, condition = "#event.action == T(net.kravuar.shmanchkin.domain.model.gameLobby.LobbyPlayerUpdateAction).CONNECTED")
-    protected void cancelAutoClose(PlayerLobbyUpdateEvent event) {
-        cancelAutoClose(event.getGameLobby());
-    }
-    @EventListener(value = PlayerLobbyUpdateEvent.class, condition = "#event.action == T(net.kravuar.shmanchkin.domain.model.gameLobby.LobbyPlayerUpdateAction).DISCONNECTED")
-    protected void scheduleAutoCloseOnEmpty(PlayerLobbyUpdateEvent event) {
-        var gameLobby = event.getGameLobby();
-        if (gameLobby.getPlayers().isEmpty())
-            scheduleAutoClose(gameLobby);
-    }
     @EventListener(PlayerLobbyUpdateEvent.class)
     protected void notify(PlayerLobbyUpdateEvent event) {
         var full = new LobbyPlayersFullUpdateDTO(event.getGameLobby().getPlayers());
@@ -263,11 +223,10 @@ public class GameLobbyService {
     protected void cancelSubscription(PlayerLobbyUpdateEvent event) {
         event.getPlayer().toIdle();
     }
-
     @EventListener(LobbyListUpdateEvent.class)
     protected void notifyLobbyListUpdate(LobbyListUpdateEvent event) {
         gameListChannel.send(new GenericMessage<>(new LobbyListUpdateDTO(event.getGameLobby(), event.getAction())));
-        gameListChannel.send(new GenericMessage<>(new LobbyListFullUpdateDTO(this.games.values())));
+        gameListChannel.send(new GenericMessage<>(new LobbyListFullUpdateDTO(this.lobbies.values())));
     }
     @EventListener(value = LobbyStatusChangedEvent.class, condition = "#event.lobbyStatus == T(net.kravuar.shmanchkin.domain.model.gameLobby.GameLobby$LobbyStatus).CLOSED")
     protected void removeLobbyListener(LobbyStatusChangedEvent event) {
@@ -284,9 +243,5 @@ public class GameLobbyService {
                     ? LobbyListUpdateAction.STARTED
                     : LobbyListUpdateAction.CLOSED
         ));
-    }
-    @EventListener(value = LobbyListUpdateEvent.class, condition = "#event.action == T(net.kravuar.shmanchkin.domain.model.gameLobby.LobbyListUpdateAction).CREATED")
-    protected void scheduleAutoClose(LobbyListUpdateEvent event) {
-        scheduleAutoClose(event.getGameLobby());
     }
 }

@@ -13,12 +13,10 @@ public class Game {
 //    TODO: create gameLoopManagingWrapper with scheduling.
     public enum Stage {
         IDLE,
-        DEALING,
-        START,
+        STARTED,
         PRE_BATTLE,
         BATTLE,
         POST_BATTLE,
-        END,
         FINISHED
     }
 
@@ -47,8 +45,12 @@ public class Game {
     public void advanceGameLoop() {
         switch (stage) {
             case IDLE -> {
-                stage = Stage.DEALING;
+                stage = Stage.STARTED;
                 dealCards();
+            }
+            case PRE_BATTLE -> {
+                stage = Stage.BATTLE;
+                System.out.println("snos kabin");
             }
             default -> System.out.println("TBD");
         }

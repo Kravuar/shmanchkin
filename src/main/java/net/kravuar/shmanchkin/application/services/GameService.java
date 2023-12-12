@@ -6,15 +6,36 @@ import net.kravuar.shmanchkin.domain.model.dto.events.game.GameStageChangeDTO;
 import net.kravuar.shmanchkin.domain.model.events.game.EscapeAttemptedEvent;
 import net.kravuar.shmanchkin.domain.model.events.game.GameLobbyAwareGameEvent;
 import net.kravuar.shmanchkin.domain.model.events.game.GameStageChangedEvent;
+import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.ForbiddenLobbyActionException;
 import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.UserIsIdleException;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 public class GameService {
     private final UserService userService;
+
+    public Mono<Void> startGame() {
+        return userService.getCurrentUser()
+                .flatMap(currentUser -> {
+                    if (currentUser.isIdle())
+                        return Mono.error(new UserIsIdleException());
+                    var gameLobby = currentUser.getSubscription().getGameLobby();
+                    if (!Objects.equals(gameLobby.getOwner(), currentUser))
+                        return Mono.error(new ForbiddenLobbyActionException(gameLobby.getLobbyName(), "Начать игру"));
+                    gameLobby.start();
+                    return Mono.empty();
+                });
+    }
+
+    public Mono<Void> cancelGame() {
+
+        return Mono.empty();
+    }
 
     public Mono<Boolean> escapeBattle() {
         return userService.getCurrentUser()
@@ -39,7 +60,6 @@ public class GameService {
         for (var user: gameLobby.getPlayers())
             user.send(stageChange);
     }
-
     @EventListener
     protected void notifyEscapeAttempt(GameLobbyAwareGameEvent<EscapeAttemptedEvent> event) {
         var gameLobby = event.getGameLobby();
