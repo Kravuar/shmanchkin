@@ -10,18 +10,20 @@ import java.util.Collection;
 
 public interface Character {
     int getPower();
-
     int getLevel();
 
     int getMaxCards();
-
     CharacterClass getCharacterClass();
-
     Race getRace();
 
     Collection<Card> getCardsInHand();
-
     Collection<Wearable> getEquippedWearables();
-
     Collection<Curse> getActiveCurses();
+
+    void addCardToHand(Card card);
+
+    void equip(Wearable equipment);
+    void unequip(Wearable equipment);
+
+    void addCurse(Curse curse);
 }

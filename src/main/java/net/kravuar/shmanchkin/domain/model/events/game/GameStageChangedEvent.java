@@ -5,10 +5,10 @@ import net.kravuar.shmanchkin.domain.model.game.Game;
 
 @Getter
 public class GameStageChangedEvent extends GameEvent {
-    private final Game.Stage stage;
+    private final Game.TurnStage turnStage;
 
-    public GameStageChangedEvent(Game game, Game.Stage stage) {
+    public GameStageChangedEvent(Game game, Game.TurnStage turnStage) {
         super(game);
-        this.stage = stage;
+        this.turnStage = turnStage;
     }
 }

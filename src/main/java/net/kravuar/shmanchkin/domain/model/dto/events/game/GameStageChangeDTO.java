@@ -6,10 +6,10 @@ import net.kravuar.shmanchkin.domain.model.game.Game;
 
 @Getter
 public class GameStageChangeDTO extends EventDTO {
-    private final Game.Stage stage;
+    private final Game.TurnStage turnStage;
 
-    public GameStageChangeDTO(Game.Stage stage) {
+    public GameStageChangeDTO(Game.TurnStage turnStage) {
         super("game-stage-change");
-        this.stage = stage;
+        this.turnStage = turnStage;
     }
 }

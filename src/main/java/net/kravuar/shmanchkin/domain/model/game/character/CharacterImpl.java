@@ -20,6 +20,7 @@ public class CharacterImpl implements Character {
     private CharacterClass characterClass;
     private Race race;
 
+//    TODO: unmodifiable getters
     private final Collection<Card> cardsInHand = new LinkedList<>();
     private final Collection<Wearable> equippedWearables = new LinkedList<>();
     private final Collection<Curse> activeCurses = new LinkedList<>();
@@ -29,5 +30,22 @@ public class CharacterImpl implements Character {
         return level + equippedWearables.stream()
                 .mapToInt(Wearable::getBonus)
                 .sum();
+    }
+
+    @Override
+    public void addCardToHand(Card card) {
+//        TODO: throw something if cant take cards
+    }
+    @Override
+    public void equip(Wearable equipment) {
+//        TODO: throw something if cant equip
+    }
+    @Override
+    public void unequip(Wearable equipment) {
+//        TODO: throw something if cant unequip
+    }
+
+    @Override
+    public void addCurse(Curse curse) {
     }
 }

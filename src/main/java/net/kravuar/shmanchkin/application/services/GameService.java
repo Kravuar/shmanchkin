@@ -48,7 +48,7 @@ public class GameService {
                             .getGameLobby()
                             .getGame();
 
-                    return Mono.just(game.escape(currentUser.getCharacter()));
+                    return Mono.just(game.escapeBattle(currentUser.getCharacter()));
                 });
     }
 
@@ -56,7 +56,7 @@ public class GameService {
     protected void notifyGameStageChange(GameLobbyAwareGameEvent<GameStageChangedEvent> event) {
         var gameLobby = event.getGameLobby();
 
-        var stageChange = new GameStageChangeDTO(event.getGameEvent().getStage());
+        var stageChange = new GameStageChangeDTO(event.getGameEvent().getTurnStage());
         for (var user: gameLobby.getPlayers())
             user.send(stageChange);
     }
