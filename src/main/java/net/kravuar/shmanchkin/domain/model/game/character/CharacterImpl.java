@@ -7,7 +7,6 @@ import net.kravuar.shmanchkin.domain.model.game.cards.door.Curse;
 import net.kravuar.shmanchkin.domain.model.game.cards.door.Race;
 import net.kravuar.shmanchkin.domain.model.game.cards.treasure.Wearable;
 
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 

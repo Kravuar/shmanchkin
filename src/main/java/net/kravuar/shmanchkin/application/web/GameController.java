@@ -6,10 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import net.kravuar.shmanchkin.application.services.GameService;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -37,4 +34,10 @@ public class GameController {
     public Mono<Boolean> attemptEscape() {
         return gameService.escapeBattle();
     }
+
+    @PostMapping("/playCard")
+    public Mono<Void> playCard(@RequestBody int inHandCardPosition) {
+        return gameService.playCard(inHandCardPosition);
+    }
+
 }

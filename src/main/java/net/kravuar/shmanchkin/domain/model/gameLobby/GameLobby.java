@@ -65,13 +65,13 @@ public class GameLobby {
 
     public synchronized void addPlayer(UserInfo player) {
         if (isFull())
-            throw new GameLobbyIsFullException(lobbyName);
+            throw new GameLobbyIsFullException(this);
         if (lobbyStatus == LobbyStatus.ACTIVE)
-            throw new IllegalLobbyStatusException(lobbyName, LobbyStatus.ACTIVE);
+            throw new IllegalLobbyStatusException(this);
         var usernameTaken = playersJoined.values().stream()
                 .anyMatch(somePlayer -> somePlayer.getUsername().equals(player.getUsername()));
         if (usernameTaken)
-            throw new UsernameTakenException(lobbyName, player.getUsername());
+            throw new UsernameTakenException(this, player.getUsername());
 
         playersJoined.put(player.getUuid(), player);
         game.addCharacter(player.getUsername(), new CharacterImpl());
@@ -86,9 +86,9 @@ public class GameLobby {
 
     public synchronized void start() {
         if (lobbyStatus != LobbyStatus.IDLE)
-            throw new IllegalLobbyStatusException(lobbyName, lobbyStatus);
+            throw new IllegalLobbyStatusException(this);
         if (playersJoined.size() < minPlayers)
-            throw new NotEnoughPlayersInLobbyException(lobbyName, minPlayers - playersJoined.size());
+            throw new NotEnoughPlayersInLobbyException(this, minPlayers - playersJoined.size());
         lobbyStatus = LobbyStatus.ACTIVE;
         game.start();
     }

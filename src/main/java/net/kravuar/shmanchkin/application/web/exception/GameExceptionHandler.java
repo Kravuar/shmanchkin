@@ -4,6 +4,7 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import net.kravuar.shmanchkin.domain.model.exceptions.game.GameException;
 import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.ForbiddenLobbyActionException;
 import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.GameLobbyException;
 import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.UserIsIdleException;
@@ -21,13 +22,13 @@ import java.util.List;
 public class GameExceptionHandler {
     @ExceptionHandler(ForbiddenLobbyActionException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    public String gameExceptionHandler(ForbiddenLobbyActionException exception) {
+    public String handleForbiddenLobbyAction(ForbiddenLobbyActionException exception) {
         return exception.getMessage();
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public String gameExceptionHandler(AccessDeniedException exception) {
+    public String handleAccessDenied(AccessDeniedException exception) {
         return exception.getMessage();
     }
 
@@ -61,7 +62,13 @@ public class GameExceptionHandler {
 
     @ExceptionHandler(GameLobbyException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String gameExceptionHandler(GameLobbyException exception) {
+    public String handleGameLobbyException(GameLobbyException exception) {
+        return exception.getMessage();
+    }
+
+    @ExceptionHandler(GameException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String handleGameException(GameException exception) {
         return exception.getMessage();
     }
 

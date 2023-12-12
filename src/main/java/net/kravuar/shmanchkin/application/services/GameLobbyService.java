@@ -33,7 +33,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @RequiredArgsConstructor
 @Service
@@ -73,7 +73,7 @@ public class GameLobbyService {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
                     if (!currentUser.isIdle())
-                        return Mono.error(new AlreadyInGameLobbyException(currentUser.getSubscription().getGameLobby().getLobbyName()));
+                        return Mono.error(new AlreadyInGameLobbyException(currentUser.getSubscription().getGameLobby()));
                     var gameLobby = new SubscribableGameLobby(
                         gameLobbyForm.getLobbyName(),
                         currentUser,
@@ -85,7 +85,7 @@ public class GameLobbyService {
                             gameLobby
                     );
                     if (previousGame != null)
-                        return Mono.error(new GameLobbyAlreadyExistsException(previousGame.getLobbyName()));
+                        return Mono.error(new GameLobbyAlreadyExistsException(previousGame));
 
                     gameEventService.addGameLobby(gameLobby);
                     gameEventService.publishGameLobbyEvent(
@@ -101,7 +101,7 @@ public class GameLobbyService {
         return userService.getCurrentUser()
                 .flatMapMany(currentUser -> {
                     if (!currentUser.isIdle())
-                        return Flux.error(new AlreadyInGameLobbyException(currentUser.getSubscription().getGameLobby().getLobbyName()));
+                        return Flux.error(new AlreadyInGameLobbyException(currentUser.getSubscription().getGameLobby()));
 
                     var gameLobby = lobbies.get(lobbyName);
                     if (gameLobby == null)
@@ -139,10 +139,10 @@ public class GameLobbyService {
                         return Mono.error(new UserIsIdleException());
                     var gameLobby = currentUser.getSubscription().getGameLobby();
                     if (!Objects.equals(gameLobby.getOwner(), currentUser))
-                        return Mono.error(new ForbiddenLobbyActionException(gameLobby.getLobbyName(), "Выгнать игрока"));
+                        return Mono.error(new ForbiddenLobbyActionException(gameLobby, "Выгнать игрока", "Вы не хост"));
                     var player = gameLobby.getPlayer(username);
                     if (player == null)
-                        return Mono.error(new PlayerNotFoundException(gameLobby.getLobbyName(), username));
+                        return Mono.error(new PlayerNotFoundException(gameLobby, username));
                     gameLobby.removePlayer(player, true);
                     return Mono.empty();
                 });
@@ -155,7 +155,7 @@ public class GameLobbyService {
                         return Mono.error(new UserIsIdleException("Нет созданной игры."));
                     var gameLobby = currentUser.getSubscription().getGameLobby();
                     if (!Objects.equals(gameLobby.getOwner(), currentUser))
-                        return Mono.error(new ForbiddenLobbyActionException(gameLobby.getLobbyName(), "Закрыть игру"));
+                        return Mono.error(new ForbiddenLobbyActionException(gameLobby, "Закрыть игру", "Вы не хост"));
                     return close(gameLobby);
                 });
     }

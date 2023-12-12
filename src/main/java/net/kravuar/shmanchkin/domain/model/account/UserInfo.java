@@ -5,11 +5,11 @@ import lombok.NonNull;
 import lombok.Setter;
 import net.kravuar.shmanchkin.domain.model.dto.events.EventDTO;
 import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.UserIsIdleException;
-import net.kravuar.shmanchkin.domain.model.game.character.Character;
 import org.springframework.messaging.support.GenericMessage;
 
 import java.util.UUID;
 
+// TODO: Don't like accessing lobby/game/character via subscrumptption
 @Getter
 public class UserInfo {
     private final UUID uuid;
@@ -31,13 +31,6 @@ public class UserInfo {
             return;
         subscription.toIdle();
         subscription = null;
-    }
-
-    public Character getCharacter() {
-        if (isIdle())
-            throw new UserIsIdleException();
-        var game = subscription.getGameLobby().getGame();
-        return game.getCharacter(username);
     }
 
     public void send(EventDTO eventMessage) {

@@ -5,8 +5,10 @@ import net.kravuar.shmanchkin.domain.model.gameLobby.GameLobby;
 
 @Getter
 public class IllegalLobbyStatusException extends GameLobbyException {
+    private final GameLobby.LobbyStatus status;
 
-    public IllegalLobbyStatusException(String lobbyName, GameLobby.LobbyStatus status) {
-        super(lobbyName, "Выполнено действия для лобби с названием " + lobbyName + " с неподходящим статусом: " + status + ".");
+    public IllegalLobbyStatusException(GameLobby gameLobby) {
+        super(gameLobby, "Выполнено действия для лобби с названием " + gameLobby.getLobbyName() + " с неподходящим статусом: " + gameLobby.getLobbyStatus() + ".");
+        this.status = gameLobby.getLobbyStatus();
     }
 }

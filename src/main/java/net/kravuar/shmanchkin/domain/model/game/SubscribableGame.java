@@ -1,8 +1,8 @@
 package net.kravuar.shmanchkin.domain.model.game;
 
+import lombok.NonNull;
 import net.kravuar.shmanchkin.domain.model.events.game.EscapeAttemptedEvent;
 import net.kravuar.shmanchkin.domain.model.events.game.GameEvent;
-import net.kravuar.shmanchkin.domain.model.events.game.GameStageChangedEvent;
 import net.kravuar.shmanchkin.domain.model.game.character.Character;
 import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.messaging.Message;
@@ -20,37 +20,32 @@ public class SubscribableGame extends Game implements SubscribableChannel {
     }
 
     @Override
-    public void advanceTurnStage() {
-        super.advanceTurnStage();
-        send(new GameStageChangedEvent(this, turnStage));
-    }
-
-    @Override
     public boolean escapeBattle(Character character) {
         var result = super.escapeBattle(character);
         send(new EscapeAttemptedEvent(this, character, result));
         return result;
     }
+//    TODO: wrappers for other actions
 
     private void send(GameEvent gameEvent) {
         channel.send(new GenericMessage<>(gameEvent));
     }
 
     @Override
-    public boolean subscribe(MessageHandler handler) {
+    public boolean subscribe(@NonNull MessageHandler handler) {
         return channel.subscribe(handler);
     }
     @Override
-    public boolean unsubscribe(MessageHandler handler) {
+    public boolean unsubscribe(@NonNull MessageHandler handler) {
         return channel.unsubscribe(handler);
     }
 
     @Override
-    public boolean send(Message<?> message) {
+    public boolean send(@NonNull Message<?> message) {
         throw new UnsupportedOperationException();
     }
     @Override
-    public boolean send(Message<?> message, long timeout) {
+    public boolean send(@NonNull Message<?> message, long timeout) {
         throw new UnsupportedOperationException();
     }
 }

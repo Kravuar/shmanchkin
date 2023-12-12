@@ -2,10 +2,8 @@ package net.kravuar.shmanchkin.application.services;
 
 import lombok.RequiredArgsConstructor;
 import net.kravuar.shmanchkin.domain.model.dto.events.game.EscapeAttemptedDTO;
-import net.kravuar.shmanchkin.domain.model.dto.events.game.GameStageChangeDTO;
 import net.kravuar.shmanchkin.domain.model.events.game.EscapeAttemptedEvent;
 import net.kravuar.shmanchkin.domain.model.events.game.GameLobbyAwareGameEvent;
-import net.kravuar.shmanchkin.domain.model.events.game.GameStageChangedEvent;
 import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.ForbiddenLobbyActionException;
 import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.UserIsIdleException;
 import org.springframework.context.event.EventListener;
@@ -26,15 +24,30 @@ public class GameService {
                         return Mono.error(new UserIsIdleException());
                     var gameLobby = currentUser.getSubscription().getGameLobby();
                     if (!Objects.equals(gameLobby.getOwner(), currentUser))
-                        return Mono.error(new ForbiddenLobbyActionException(gameLobby.getLobbyName(), "Начать игру"));
+                        return Mono.error(new ForbiddenLobbyActionException(gameLobby, "Начать игру", "Вы не хост"));
                     gameLobby.start();
                     return Mono.empty();
                 });
     }
-
     public Mono<Void> cancelGame() {
 
         return Mono.empty();
+    }
+    public Mono<Void> endTurn() {
+        return userService.getCurrentUser()
+                .flatMap(currentUser -> {
+                    if (currentUser.isIdle())
+                        return Mono.error(new UserIsIdleException());
+                    var gameLobby = currentUser
+                            .getSubscription()
+                            .getGameLobby();
+                    var game = gameLobby.getGame();
+                    var character = game.getCharacter(currentUser.getUsername());
+                    if (!game.getCurrentTurnCharacter().equals(character))
+                        return Mono.error(new ForbiddenLobbyActionException(gameLobby, "Закончить ход", "Не ваш ход"));
+                    game.endTurn();
+                    return Mono.empty();
+                });
     }
 
     public Mono<Boolean> escapeBattle() {
@@ -47,8 +60,8 @@ public class GameService {
                             .getSubscription()
                             .getGameLobby()
                             .getGame();
-
-                    return Mono.just(game.escapeBattle(currentUser.getCharacter()));
+                    var character = game.getCharacter(currentUser.getUsername());
+                    return Mono.just(game.escapeBattle(character));
                 });
     }
 
@@ -63,7 +76,7 @@ public class GameService {
                             .getGameLobby()
                             .getGame();
 
-                    var character = currentUser.getCharacter();
+                    var character = game.getCharacter(currentUser.getUsername());
                     var card = character.getCardFromHand(inHandCardPosition);
                     game.handleCard(card, character);
 
@@ -71,14 +84,6 @@ public class GameService {
                 });
     }
 
-    @EventListener
-    protected void notifyGameStageChange(GameLobbyAwareGameEvent<GameStageChangedEvent> event) {
-        var gameLobby = event.getGameLobby();
-
-        var stageChange = new GameStageChangeDTO(event.getGameEvent().getTurnStage());
-        for (var user: gameLobby.getPlayers())
-            user.send(stageChange);
-    }
     @EventListener
     protected void notifyEscapeAttempt(GameLobbyAwareGameEvent<EscapeAttemptedEvent> event) {
         var gameLobby = event.getGameLobby();

@@ -1,13 +1,14 @@
 package net.kravuar.shmanchkin.domain.model.exceptions.gameLobby;
 
 import lombok.Getter;
+import net.kravuar.shmanchkin.domain.model.gameLobby.GameLobby;
 
 @Getter
 public class GameLobbyException extends RuntimeException {
-    private final String lobbyName;
+    private final GameLobby gameLobby;
 
-    public GameLobbyException(String lobbyName, String message) {
+    public GameLobbyException(GameLobby gameLobby, String message) {
         super(message);
-        this.lobbyName = lobbyName;
+        this.gameLobby = gameLobby;
     }
 }
