@@ -52,6 +52,25 @@ public class GameService {
                 });
     }
 
+    public Mono<Void> playCard(int inHandCardPosition) {
+        return userService.getCurrentUser()
+                .flatMap(currentUser -> {
+                    if (currentUser.isIdle())
+                        return Mono.error(new UserIsIdleException());
+
+                    var game = currentUser
+                            .getSubscription()
+                            .getGameLobby()
+                            .getGame();
+
+                    var character = currentUser.getCharacter();
+                    var card = character.getCardFromHand(inHandCardPosition);
+                    game.handleCard(card, character);
+
+                    return Mono.empty();
+                });
+    }
+
     @EventListener
     protected void notifyGameStageChange(GameLobbyAwareGameEvent<GameStageChangedEvent> event) {
         var gameLobby = event.getGameLobby();

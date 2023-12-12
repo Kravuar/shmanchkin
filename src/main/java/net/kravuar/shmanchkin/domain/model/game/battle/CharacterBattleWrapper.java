@@ -8,7 +8,7 @@ import net.kravuar.shmanchkin.domain.model.game.cards.door.Race;
 import net.kravuar.shmanchkin.domain.model.game.cards.treasure.Wearable;
 import net.kravuar.shmanchkin.domain.model.game.character.Character;
 
-import java.util.Collection;
+import java.util.List;
 
 // Both forwarding and wrapper class (since no reusability expected)
 @RequiredArgsConstructor
@@ -45,23 +45,28 @@ public class CharacterBattleWrapper implements Character {
     }
 
     @Override
-    public Collection<Card> getCardsInHand() {
+    public List<Card> getCardsInHand() {
         return character.getCardsInHand();
     }
 
     @Override
-    public Collection<Wearable> getEquippedWearables() {
+    public List<Wearable> getEquippedWearables() {
         return character.getEquippedWearables();
     }
 
     @Override
-    public Collection<Curse> getActiveCurses() {
+    public List<Curse> getActiveCurses() {
         return character.getActiveCurses();
     }
 
     @Override
     public void addCardToHand(Card card) {
         character.addCardToHand(card);
+    }
+
+    @Override
+    public Card getCardFromHand(int index) {
+        return character.getCardFromHand(index);
     }
 
     @Override

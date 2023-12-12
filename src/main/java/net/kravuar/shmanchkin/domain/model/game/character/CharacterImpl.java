@@ -9,6 +9,7 @@ import net.kravuar.shmanchkin.domain.model.game.cards.treasure.Wearable;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 
 // TODO: Having an interface and Impl is bad
 @Getter
@@ -21,9 +22,9 @@ public class CharacterImpl implements Character {
     private Race race;
 
 //    TODO: unmodifiable getters
-    private final Collection<Card> cardsInHand = new LinkedList<>();
-    private final Collection<Wearable> equippedWearables = new LinkedList<>();
-    private final Collection<Curse> activeCurses = new LinkedList<>();
+    private final List<Card> cardsInHand = new LinkedList<>();
+    private final List<Wearable> equippedWearables = new LinkedList<>();
+    private final List<Curse> activeCurses = new LinkedList<>();
 
     @Override
     public int getPower() {
@@ -36,6 +37,11 @@ public class CharacterImpl implements Character {
     public void addCardToHand(Card card) {
 //        TODO: throw something if cant take cards
     }
+    @Override
+    public Card getCardFromHand(int index) {
+        return cardsInHand.remove(index);
+    }
+
     @Override
     public void equip(Wearable equipment) {
 //        TODO: throw something if cant equip

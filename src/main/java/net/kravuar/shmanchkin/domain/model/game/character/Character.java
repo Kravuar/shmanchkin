@@ -7,6 +7,7 @@ import net.kravuar.shmanchkin.domain.model.game.cards.door.Race;
 import net.kravuar.shmanchkin.domain.model.game.cards.treasure.Wearable;
 
 import java.util.Collection;
+import java.util.List;
 
 public interface Character {
     int getPower();
@@ -16,11 +17,12 @@ public interface Character {
     CharacterClass getCharacterClass();
     Race getRace();
 
-    Collection<Card> getCardsInHand();
-    Collection<Wearable> getEquippedWearables();
-    Collection<Curse> getActiveCurses();
+    List<Card> getCardsInHand();
+    List<Wearable> getEquippedWearables();
+    List<Curse> getActiveCurses();
 
     void addCardToHand(Card card);
+    Card getCardFromHand(int index);
 
     void equip(Wearable equipment);
     void unequip(Wearable equipment);
