@@ -148,6 +148,18 @@ public class GameLobbyService {
                 });
     }
 
+    public Mono<Void> startGame() {
+        return userService.getCurrentUser()
+                .flatMap(currentUser -> {
+                    if (currentUser.isIdle())
+                        return Mono.error(new UserIsIdleException());
+                    var gameLobby = currentUser.getSubscription().getGameLobby();
+                    if (!Objects.equals(gameLobby.getOwner(), currentUser))
+                        return Mono.error(new ForbiddenLobbyActionException(gameLobby, "Начать игру", "Вы не хост"));
+                    gameLobby.start();
+                    return Mono.empty();
+                });
+    }
     public Mono<Void> closeCurrentGameLobby() {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {
@@ -170,16 +182,14 @@ public class GameLobbyService {
                 .flatMap(currentUser -> {
                     if (currentUser.isIdle())
                         return Mono.error(new UserIsIdleException());
-                    else {
-                        gameEventService.publishGameLobbyEvent(
-                            new MessageEvent(
-                                currentUser.getSubscription().getGameLobby(),
-                                message,
-                                currentUser
-                            )
-                        );
-                        return Mono.empty();
-                    }
+                    gameEventService.publishGameLobbyEvent(
+                        new MessageEvent(
+                            currentUser.getSubscription().getGameLobby(),
+                            message,
+                            currentUser
+                        )
+                    );
+                    return Mono.empty();
                 });
     }
 
@@ -215,6 +225,12 @@ public class GameLobbyService {
             user.send(single);
             user.send(full);
         }
+    }
+    @EventListener(MessageEvent.class)
+    protected void notify(MessageEvent event) {
+        var messageDTO = new MessageDTO(event);
+        for (var user: event.getGameLobby().getPlayers())
+            user.send(messageDTO);
     }
     @EventListener(value = PlayerLobbyUpdateEvent.class, condition =
             "#event.action == T(net.kravuar.shmanchkin.domain.model.gameLobby.LobbyPlayerUpdateAction).DISCONNECTED " +
