@@ -174,4 +174,18 @@ public class GameLobbyController {
     public Mono<FullLobbyDTO> getLobbyInfo() {
         return gameLobbyService.getLobbyInfo();
     }
+
+    @Operation(
+            summary = "Старт лобби.",
+            description = "Запускает игру. Нужно быть хостом."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Игра запущена."),
+            @ApiResponse(responseCode = "400", description = "Невозможно запустить игру. Пользователь не в игре или игра уже запущена."),
+            @ApiResponse(responseCode = "403", description = "Невозможно запустить игру. Пользователь не хост."),
+    })
+    @PutMapping("/start")
+    public Mono<Void> startGame() {
+        return gameLobbyService.startGame();
+    }
 }

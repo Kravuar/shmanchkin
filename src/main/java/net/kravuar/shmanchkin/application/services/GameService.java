@@ -18,19 +18,6 @@ import java.util.Objects;
 public class GameService {
     private final UserService userService;
 
-    public Mono<Void> startGame() {
-        return userService.getCurrentUser()
-                .flatMap(currentUser -> {
-                    if (currentUser.isIdle())
-                        return Mono.error(new UserIsIdleException());
-                    var gameLobby = currentUser.getSubscription().getGameLobby();
-                    if (!Objects.equals(gameLobby.getOwner(), currentUser))
-                        return Mono.error(new ForbiddenLobbyActionException(gameLobby, "Начать игру", "Вы не хост"));
-                    gameLobby.start();
-                    return Mono.empty();
-                });
-    }
-
     public Mono<Void> endTurn() {
         return userService.getCurrentUser()
                 .flatMap(currentUser -> {

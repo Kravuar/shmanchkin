@@ -29,6 +29,7 @@ public class GameEventService implements MessageHandler {
     @Override
     public void handleMessage(Message<?> gameEventMessage) throws MessagingException {
         var gameEvent = (GameLobbyEvent) gameEventMessage.getPayload();
+        System.out.println(gameEvent);
         publisher.publishEvent(gameEvent);
     }
 }

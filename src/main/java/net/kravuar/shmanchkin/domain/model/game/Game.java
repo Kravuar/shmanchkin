@@ -123,6 +123,8 @@ public class Game {
         System.out.println(eee5.getDescription());
         System.out.println(eee5.getTreasuresCount());
         System.out.println(eee5.GetPower());
+
+        battleField = new BattleField();
         battleField.MonsterSide.Participants.add(eee5);
     }
 }

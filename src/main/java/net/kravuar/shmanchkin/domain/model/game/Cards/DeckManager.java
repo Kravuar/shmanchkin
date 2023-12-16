@@ -1,8 +1,6 @@
 package net.kravuar.shmanchkin.domain.model.game.Cards;
 
-import net.kravuar.shmanchkin.domain.model.game.Cards.Providers.CursesCardProvider;
-import net.kravuar.shmanchkin.domain.model.game.Cards.Providers.MonsterBuffsProvider;
-import net.kravuar.shmanchkin.domain.model.game.Cards.Providers.MonsterProvider;
+import net.kravuar.shmanchkin.domain.model.game.Cards.Providers.*;
 
 public class DeckManager {
 
@@ -18,6 +16,9 @@ public class DeckManager {
 
     public static Deck getTreasureDeck() {
         var treasure_deck = new Deck();
+        treasure_deck.addDeckProvider(new WearableTreasureCardsProvider());
+        treasure_deck.addDeckProvider(new OneTimeTreasureCardsProvider());
+
         treasure_deck.initCards();
         return treasure_deck;
     }
