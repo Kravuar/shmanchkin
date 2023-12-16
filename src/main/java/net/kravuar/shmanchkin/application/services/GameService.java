@@ -1,6 +1,7 @@
 package net.kravuar.shmanchkin.application.services;
 
 import lombok.RequiredArgsConstructor;
+import net.kravuar.shmanchkin.domain.model.dto.CharacterDTO;
 import net.kravuar.shmanchkin.domain.model.dto.events.game.EscapeAttemptedDTO;
 import net.kravuar.shmanchkin.domain.model.events.game.EscapeAttemptedEvent;
 import net.kravuar.shmanchkin.domain.model.events.game.GameLobbyAwareGameEvent;
@@ -76,6 +77,21 @@ public class GameService {
                     game.handleCard(card, character);
 
                     return Mono.empty();
+                });
+    }
+    public Mono<CharacterDTO> getInfo() {
+        return userService.getCurrentUser()
+                .flatMap(currentUser -> {
+                    if (currentUser.isIdle())
+                        return Mono.error(new UserIsIdleException());
+
+                    var game = currentUser
+                            .getSubscription()
+                            .getGameLobby()
+                            .getGame();
+
+                    var character = game.getCharacter(currentUser.getUsername());
+                    return Mono.just(new CharacterDTO(character));
                 });
     }
 

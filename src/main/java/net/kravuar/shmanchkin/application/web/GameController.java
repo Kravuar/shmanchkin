@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import net.kravuar.shmanchkin.application.services.GameService;
+import net.kravuar.shmanchkin.domain.model.dto.CharacterDTO;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -67,5 +68,18 @@ public class GameController {
     @PostMapping("/endTurn")
     public Mono<Void> endTurn() {
         return gameService.endTurn();
+    }
+
+    @Operation(
+            summary = "Информация всякая.",
+            description = "Карточки, левел там."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Норм."),
+            @ApiResponse(responseCode = "400", description = "Не норм.")
+    })
+    @PostMapping("/characterInfo")
+    public Mono<CharacterDTO> characterInfo() {
+        return gameService.getInfo();
     }
 }
