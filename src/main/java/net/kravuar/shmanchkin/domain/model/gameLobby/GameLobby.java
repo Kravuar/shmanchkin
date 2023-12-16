@@ -7,7 +7,7 @@ import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.IllegalLobbyStat
 import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.NotEnoughPlayersInLobbyException;
 import net.kravuar.shmanchkin.domain.model.exceptions.gameLobby.UsernameTakenException;
 import net.kravuar.shmanchkin.domain.model.game.Game;
-import net.kravuar.shmanchkin.domain.model.game.character.CharacterImpl;
+import net.kravuar.shmanchkin.domain.model.game.character.Character;
 
 import java.util.*;
 
@@ -74,7 +74,7 @@ public class GameLobby {
             throw new UsernameTakenException(this, player.getUsername());
 
         playersJoined.put(player.getUuid(), player);
-        game.addCharacter(player.getUsername(), new CharacterImpl());
+        game.addCharacter(player.getUsername(), new Character());
     }
     public synchronized boolean removePlayer(UserInfo player, boolean kicked) {
         if (playersJoined.remove(player.getUuid()) != null) {

@@ -72,7 +72,7 @@ public class GameService {
                             .getGame();
 
                     var character = game.getCharacter(currentUser.getUsername());
-                    var card = character.getCardFromHand(inHandCardPosition);
+                    var card = character.getCardsInHand().get(inHandCardPosition);
                     game.handleCard(card, character);
 
                     return Mono.empty();
