@@ -64,8 +64,10 @@ public class Game {
         StringBuilder names = new StringBuilder();
         for (var participant : battleField.MonsterSide.Participants) {
             var monster = (Monster)participant;
+            names.append("Monster: ");
             names.append(monster.getName());
             names.append("(");
+            names.append("Power: ");
             names.append(monster.GetPower().toString());
             names.append(") ");
         }
@@ -75,6 +77,7 @@ public class Game {
         for (var person : battleField.PlayerSide.Participants) {
             names.append("Player");
             names.append("(");
+            names.append("Power: ");
             names.append(person.GetPower().toString());
             names.append(") ");
         }
@@ -92,8 +95,8 @@ public class Game {
         if (character.equals(currentTurnCharacter))
             System.out.println("Ne tvoi hod, nu da lando, hodi");
         System.out.println("PLAYED CARD");
-        System.out.println(card.getName());
-        System.out.println(card.getDescription());
+        System.out.println("Name: " + card.getName());
+        System.out.println("Description: " + card.getDescription());
         System.out.println(card);
         card.Play(character);
     }
@@ -110,19 +113,22 @@ public class Game {
             var a1 = doorDeck.pullCard();
             var b3 = treasureDeck.pullCard();
 
-            System.out.println(a1.getName());
-            System.out.println(a1.getDescription());
-            System.out.println(b3.getName());
-            System.out.println(b3.getDescription());
+            System.out.println("Dostali door:");
+            System.out.println("Name: " + a1.getName());
+            System.out.println("Description : " + a1.getDescription());
+            System.out.println("Dostali treasure:");
+            System.out.println("Name: " + b3.getName());
+            System.out.println("Description : " + b3.getDescription());
 
             character.cardsInHand.add(a1);
             character.cardsInHand.add(b3);
         }
         var eee5 = (Monster) monsters.GetCards().get(0);
-        System.out.println(eee5.getName());
-        System.out.println(eee5.getDescription());
-        System.out.println(eee5.getTreasuresCount());
-        System.out.println(eee5.GetPower());
+        System.out.println("Monstra v bitvu: ");
+        System.out.println("Name: " + eee5.getName());
+        System.out.println("Description: " + eee5.getDescription());
+        System.out.println("TreasureCount: " + eee5.getTreasuresCount());
+        System.out.println("Power: " + eee5.GetPower());
 
         battleField = new BattleField();
         battleField.MonsterSide.Participants.add(eee5);
